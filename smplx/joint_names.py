@@ -27,6 +27,7 @@ JOINT_NAMES = [
     "left_ankle",
     "right_ankle",
     "spine3",
+
     "left_foot",
     "right_foot",
     "neck",
@@ -37,6 +38,7 @@ JOINT_NAMES = [
     "right_shoulder",
     "left_elbow",
     "right_elbow",
+
     "left_wrist",
     "right_wrist",
     "jaw",
@@ -47,6 +49,7 @@ JOINT_NAMES = [
     "left_index3",
     "left_middle1",
     "left_middle2",
+
     "left_middle3",
     "left_pinky1",
     "left_pinky2",

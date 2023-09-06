@@ -107,8 +107,8 @@ def main(
             # expression=expression,
             return_verts=True,
         )
-        vertices = output.vertices.detach().cpu().numpy().squeeze()
-        joints = output.joints.detach().cpu().numpy().squeeze()
+        vertices = output.vertices_frame.detach().cpu().numpy().squeeze()
+        joints = output.joints_frame.detach().cpu().numpy().squeeze()
 
         vertex_colors = np.ones([vertices.shape[0], 4]) * [0.3, 0.3, 0.3, 0.8]
         # process=False to avoid creating a new mesh

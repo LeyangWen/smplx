@@ -39,14 +39,14 @@ def main(model_folder, corr_fname, ext='npz',
 
     output = model(betas=betas, expression=expression,
                    return_verts=True)
-    vertices = output.vertices.detach().cpu().numpy().squeeze()
-    joints = output.joints.detach().cpu().numpy().squeeze()
+    vertices = output.vertices_frame.detach().cpu().numpy().squeeze()
+    joints = output.joints_frame.detach().cpu().numpy().squeeze()
 
     print('Vertices shape =', vertices.shape)
     print('Joints shape =', joints.shape)
 
     mesh = o3d.geometry.TriangleMesh()
-    mesh.vertices = o3d.utility.Vector3dVector(vertices)
+    mesh.vertices_frame = o3d.utility.Vector3dVector(vertices)
     mesh.triangles = o3d.utility.Vector3iVector(model.faces)
     mesh.compute_vertex_normals()
 
