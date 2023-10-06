@@ -122,9 +122,10 @@ def main(model_folder,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='SMPL-X Demo')
 
-    parser.add_argument('--model-folder', required=True, type=str,
+    parser.add_argument('--model-folder', default='models/',
+                        required=True, type=str,
                         help='The path to the model folder')
-    parser.add_argument('--model-type', default='smplx', type=str,
+    parser.add_argument('--model-type', default='smpl', type=str,
                         choices=['smpl', 'smplh', 'smplx', 'mano', 'flame'],
                         help='The type of model to load')
     parser.add_argument('--gender', type=str, default='neutral',
@@ -141,7 +142,7 @@ if __name__ == '__main__':
                         help='The module to use for plotting the result')
     parser.add_argument('--ext', type=str, default='npz',
                         help='Which extension to use for loading')
-    parser.add_argument('--plot-joints', default=False,
+    parser.add_argument('--plot-joints', default=True,
                         type=lambda arg: arg.lower() in ['true', '1'],
                         help='The path to the model folder')
     parser.add_argument('--sample-shape', default=True,
@@ -157,6 +158,7 @@ if __name__ == '__main__':
                         help='Compute the contour of the face')
 
     args = parser.parse_args()
+    print(args.model_folder)
 
     model_folder = osp.expanduser(osp.expandvars(args.model_folder))
     model_type = args.model_type
