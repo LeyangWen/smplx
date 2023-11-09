@@ -127,8 +127,6 @@ class SMPLPose:
             app.add_window(vis)
             app.run()
 
-
-
     def plot_vertices(self, foldername=False, make_gif=False, fps=30):
         if foldername:
             create_dir(foldername)
@@ -151,9 +149,9 @@ class SMPLPose:
             output_filename = os.path.join(foldername, '00000000_merged.gif')
             imageio.mimsave(output_filename, images, duration=self.frame_number/fps, loop=100)
 
-    def export_3DSSPP_batch(self, loc_file=f'experiment/3DSSPPBatch.txt', weight=80, height=180, start_frame=0, end_frame=-1):
+    def export_3DSSPP_batch(self, loc_file=f'experiment/3DSSPPBatch.txt', weight=80, height=180, start_frame=0, end_frame=0, concatenate=0):
         '''
-
+        concatenate: if not false, append to the end of the file at int(concatenate) frame
 
          # 1 - 3 Top Head Skin Surface
         # 4 - 6 L. Head Skin Surface
@@ -195,7 +193,7 @@ class SMPLPose:
         # 112 - 114 R. Ball of Foot Virtual point
         # 115 - 117 R. Metatarsalphalangeal Skin Surface
         '''
-        if end_frame == -1:
+        if end_frame == 0:
             end_frame = self.frame_number
         if start_frame != 0:
             raise NotImplementedError
@@ -242,32 +240,34 @@ class SMPLPose:
         loc[:, 111:114] = self.joints[:, 11, :]  # 112 - 114 R. Ball of Foot Virtual point
         # loc[:, 114:117]     =                                   # 115 - 117 R. Metatarsalphalangeal Skin Surface
 
-
+        assert isinstance(concatenate, int) if concatenate else True
+        mode = 'a' if concatenate else 'w'
         # write as txt file
-        with open(loc_file, 'w') as f:
+        with open(loc_file, mode) as f:
             f.write('3DSSPPBATCHFILE #\n')
             f.write('COM #\n')
-            f.write('DES 1 "Task Name" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
+            f.write(f'DES 1 "Task-{concatenate}" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
             for i, k in enumerate(np.arange(start_frame, end_frame, step)):
                 joint_locations = np.array2string(loc[k], separator=' ', max_line_width=1000000, precision=3, suppress_small=True)[1:-1].replace('0. ', '0 ')
-                # f.write('AUT 1 #\n')
-                f.write('FRM ' + str(i) + ' #\n')
+                frame_i = i+int(concatenate)
+                f.write('FRM ' + str(frame_i) + ' #\n')
                 f.write(f'ANT 0 3 {height} {weight} #\n')  # male 0, female 1, self-set 3, height  , weight
-                f.write(f'HAN 0 0 0 0 0 0 #\n')
+                # f.write(f'HAN 0 0 0 0 0 0 #\n')  # this seems to be causing bug in 3DSSPP after 800+ commands
                 f.write(f'LOC {joint_locations} #\n')
                 # f.write('HAN 15 -20 85 15 -15 80 #\n')
                 # f.write('EXP #\n')
-            # f.write('AUT 1 #\n')
-
+                f.write('AUT 1 #\n')
+        return frame_i
 
 
 
 if __name__ == '__main__':
-
-    # for motion_i in range(1):
-    for motion_i in [15, 17, 23, 24, 42, 48]:
+    motion_smpl_folder = r'C:\Users\Public\Documents\Vicon\vicon_coding_projects\smplx\experiment\text2pose-20231107T164009Z-001\text2pose\A_person_raise_both_hands_above_his_head_and_keep_them_there'
+    loc_file = f'{motion_smpl_folder}\\smpl_3DSSPP_batch_all.txt'
+    last_frame_i = 0
+    for motion_i in range(10):
+    # for motion_i in [15, 17, 23, 24, 42, 48]:
         # motion_i = 42
-        motion_smpl_folder = r'C:\Users\Public\Documents\Vicon\vicon_coding_projects\smplx\experiment\text2pose-20231004T174553Z-001\text2pose'
         motion_smpl_file = f'{motion_smpl_folder}\smpl_pose_72_{motion_i}.npy'
         # motion_smpl_file = f'G:\My Drive\DPM\\temp\smpl_pose_72_{motion_i}.npy'
         # motion_smpl_file = r'G:\My Drive\DPM\temp\motion_0.npy'
@@ -289,7 +289,7 @@ if __name__ == '__main__':
         smpl_pose = SMPLPose()
         smpl_pose.load_smpl(joints, vertices, faces)
 
-        smpl_pose.export_3DSSPP_batch(loc_file=f'{motion_smpl_folder}\\smpl_3DSSPP_batch_{motion_i}.txt', weight=90, height=180)
+        last_frame_i = smpl_pose.export_3DSSPP_batch(loc_file=loc_file, weight=90, height=180, concatenate=last_frame_i)
         # smpl_pose.plot_vertices_frame(frame=30, plot_joints=True, render_mode='open3d')
         # # smpl_pose.plot_vertices(foldername=f'{motion_smpl_folder}\smpl_pose_72_{motion_i}', make_gif=True, fps=30)
         # break
