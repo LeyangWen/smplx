@@ -1,9 +1,24 @@
 import pandas as pd
 import numpy as np
 import os
+import matplotlib.pyplot as plt
 
 
 class SSPPOutput:
+    """
+    This class is used to process 3DSSPP output files
+    Functions include: read, visualize, evaluate
+
+    Usage example:
+    result = SSPPOutput() / SSPPV6Output() / SSPPV7Output() / SSPPV7WrapperOutput()
+    result.load_file('3DSSPP_output.txt')  # or .exp file for v6
+    result.show_category()
+    result.show_category(subcategory='Strength Capability Percentile')
+    result.header
+    result.df['Info - Task Name'][200]
+    result.cut_segment()
+    result.eval_segment(result.segments, eval_keys)
+    """
     def __init__(self):
         self.header = []
         self.header_category = {}
@@ -52,9 +67,9 @@ class SSPPOutput:
             return list(self.header_category.keys())
 
     def cut_segment(self):
-        '''
-        segment df by task name (assuming input exp file have multiple tasks)
-        '''
+        """
+        Input might contain multiple tasks, cut segments df by task name
+        """
         segments = {}
         baseline_segments = {}
         task_names = self.df['Info - Task Name']
@@ -71,15 +86,22 @@ class SSPPOutput:
             else:
                 segments[unique_task_name] = self.df.iloc[start_frame:end_frame, :]
             # print(segments[unique_task_name]['Info - Task Name'])
-        self.segments = segments
+        self.segments = segments if unique_task_len > 1 else baseline_segments
         self.baseline_segments = baseline_segments
-        return segments, unique_task_names, unique_task_len
+        return unique_task_names, unique_task_len
 
     def eval_segment(self, segments, segment_eval_keys, verbose=False):
         """
-        segments: dict of segments e.g., self.segments, self.baseline_segments
-        eval_key: str: 'Summary - Minimum Shoulder Percentile' or list of str
-        return: id, % score, task name
+        Perform evaluation on segments, such as calculating the mean, min, and max.
+
+        Parameters:
+        segments (dict): A dictionary of segments. For example, self.segments or self.baseline_segments, you can also pass in self.segments['key'] for one segment.
+        segment_eval_keys (str or list): A key for evaluation. For example, 'Summary - Minimum Shoulder Percentile'.
+                                         It can also be a list of such keys.
+        verbose (bool, optional): If True, print detailed information during evaluation. Defaults to False.
+
+        Returns:
+        tuple: A tuple containing the id, score percentage, and task name.
         """
         segment_eval_keys = segment_eval_keys if isinstance(segment_eval_keys, list) else [segment_eval_keys]
         segments = segments if isinstance(segments, dict) else {"place_holder": segments}
@@ -98,6 +120,44 @@ class SSPPOutput:
         task_id_w_max_score = np.argmax(min_score_per_task)
         task_w_max_score = list(segments.keys())[task_id_w_max_score]
         return task_id_w_max_score, min_score_per_task[task_id_w_max_score], task_w_max_score
+
+    def visualize_segment(self, segments, segment_eval_keys, verbose=False):
+        """
+        Visualize segment results
+
+        Parameters:
+        segments (dict): A dictionary of segments. For example, self.segments or self.baseline_segments, you can also pass in self.segments['key'] for one segment.
+        segment_eval_keys (str or list): A key for evaluation. For example, 'Summary - Minimum Shoulder Percentile'.
+                                         It can also be a list of such keys.
+        verbose (bool, optional): If True, print detailed information during evaluation. Defaults to False.
+
+        Returns:
+        tuple:
+        """
+        segment_eval_keys = segment_eval_keys if isinstance(segment_eval_keys, list) else [segment_eval_keys]
+        segments = segments if isinstance(segments, dict) else {"place_holder": segments}
+        figure_num = len(segment_eval_keys)
+        fig, axs = plt.subplots(figure_num, 1, figsize=(10, figure_num*10))
+        plt.subplots_adjust(hspace=0.75)
+        total_frame_count = sum([len(_value) for _key, _value in segments.items()])  # Count the total frame count
+        print(f"Total frame count: {total_frame_count}")
+        plt.xlabel("Frames", fontsize=14)  # Set x-axis title
+        # plot each segment in sequence, with a gray vertical line in between
+        for eval_key_idx, eval_key in enumerate(segment_eval_keys):
+            axs[eval_key_idx].set_title(eval_key)  # subheading
+            # total_frame_count = len(segments[list(segments.keys())[eval_key_idx]][eval_key])  # Count the total frame count for each segment
+            # axs[eval_key_idx].set_xlim(0, total_frame_count-1)  # Set x-axis limit for each subplot
+            if "Percentile" in eval_key:
+                axs[eval_key_idx].set_ylim(0, 110)
+            for _key, _value in segments.items():
+                axs[eval_key_idx].plot(_value[eval_key])
+                # gray out the segment in between
+                axs[eval_key_idx].axvspan(_value.index[0]-1, _value.index[0], facecolor='gray', alpha=0.8)
+        if verbose:
+            plt.show()
+
+
+
 
 
 class SSPPV6Output(SSPPOutput):
@@ -221,6 +281,11 @@ class SSPPV7WrapperOutput(SSPPV7Output):
         """
         df = pd.read_csv(file, header=None, skiprows=1)  # skip first line, it is header
         header = list(pd.read_csv(file, header=None, nrows=1).iloc[0, :].values)  # read first row
+        if True:  # todo: small bug in wrapper, temp fix to remove some data
+            search_key = 'Fatigue Start'
+            key_idx = header.index(search_key)
+            header = header[:key_idx]
+            df = df.iloc[:, :key_idx]
         self.set_header(header=header)
         df.columns = self.header
         self.df = df
@@ -231,48 +296,59 @@ if __name__ == "__main__":
 
     if case == 0:  # visualization example
         # load file
-        pass
-    else: case == 1  # mass evaluation example
-    motion_smpl_folder_base = r'experiment\text2pose-20231113T194712Z-001\text2pose'
-    text_prompts = ['A_person_half_kneel_with_one_leg_to_work_near_the_floor',
-                    'A_person_half_squat_to_work_near_the_floor',
-                    'A_person_move_a_box_from_left_to_right',
-                    'A_person_raise_both_hands_above_his_head_and_keep_them_there',
-                    'A_person_squat_to_carry_up_something']
-    text_prompt = text_prompts[2]
-    motion_smpl_folder = f'{motion_smpl_folder_base}\\{text_prompt}'
+        input_3DSSPP_folder = r'experiment\example'
+        input_3DSSPP_files = ['wrapper_multi_task.txt', 'wrapper_single_task.txt']
+        input_3DSSPP_file = input_3DSSPP_files[0]
 
-    search_string = '_export.txt'
-    txt_files = [f for f in os.listdir(motion_smpl_folder) if search_string in f]
+        result = SSPPV7Output()
+        result.load_file(os.path.join(input_3DSSPP_folder, input_3DSSPP_file))
+        result.cut_segment()
 
-    txt_file = txt_files[0]
-    print(f"loading {txt_file} ...")
-    result = SSPPOutput()
-    result.load_txt_file(os.path.join(motion_smpl_folder, txt_file))
-    a = result.get_category('Info')
-    # result.show_category()
-    # result.show_category(subcategory='Strength Capability Percentile')
-    # result.header
-    # result.df['Info - Task Name'][200]
-    result.cut_segment()
-    # eval_keys = [
-    #              'Summary - Minimum Wrist Percentile',
-    #              'Summary - Minimum Elbow Percentile',
-    #              'Summary - Minimum Shoulder Percentile',
-    #              'Summary - Minimum Torso Percentile',
-    #              'Summary - Minimum Neck Percentile',
-    #              'Summary - Minimum Hip Percentile',
-    #              'Summary - Minimum Knee Percentile',
-    #              'Summary - Minimum Ankle Percentile'
-    # ]
-    eval_keys = result.show_category(subcategory='Strength Capability Percentile')
+        eval_keys = result.show_category(subcategory='Summary')[:-3]
+        result.visualize_segment(result.segments, segment_eval_keys=eval_keys, verbose=True)
 
-    ours = result.eval_segment(result.segments, eval_keys)
-    result.eval_segment(result.segments[ours[-1]], eval_keys, verbose=True)
-    baseline = result.eval_segment(result.baseline_segments, eval_keys, verbose=True)
-    print("##################################################")
-    print(f"text prompt: {text_prompt}")
-    print(f"ours: {ours}")
-    print(f"baseline: {baseline}")
+
+    elif case == 1:  # mass evaluation example
+        motion_smpl_folder_base = r'experiment\text2pose-20231113T194712Z-001\text2pose'
+        text_prompts = ['A_person_half_kneel_with_one_leg_to_work_near_the_floor',
+                        'A_person_half_squat_to_work_near_the_floor',
+                        'A_person_move_a_box_from_left_to_right',
+                        'A_person_raise_both_hands_above_his_head_and_keep_them_there',
+                        'A_person_squat_to_carry_up_something']
+        text_prompt = text_prompts[2]
+        motion_smpl_folder = f'{motion_smpl_folder_base}\\{text_prompt}'
+
+        search_string = '_export.txt'
+        txt_files = [f for f in os.listdir(motion_smpl_folder) if search_string in f]
+
+        txt_file = txt_files[0]
+        print(f"loading {txt_file} ...")
+        result = SSPPV7Output()
+        result.load_file(os.path.join(motion_smpl_folder, txt_file))
+        a = result.get_category('Info')
+        # result.show_category()
+        # result.show_category(subcategory='Strength Capability Percentile')
+        # result.header
+        # result.df['Info - Task Name'][200]
+        result.cut_segment()
+        # eval_keys = [
+        #              'Summary - Minimum Wrist Percentile',
+        #              'Summary - Minimum Elbow Percentile',
+        #              'Summary - Minimum Shoulder Percentile',
+        #              'Summary - Minimum Torso Percentile',
+        #              'Summary - Minimum Neck Percentile',
+        #              'Summary - Minimum Hip Percentile',
+        #              'Summary - Minimum Knee Percentile',
+        #              'Summary - Minimum Ankle Percentile'
+        # ]
+        eval_keys = result.show_category(subcategory='Strength Capability Percentile')
+
+        ours = result.eval_segment(result.segments, eval_keys)
+        result.eval_segment(result.segments[ours[-1]], eval_keys, verbose=True)
+        baseline = result.eval_segment(result.baseline_segments, eval_keys, verbose=True)
+        print("##################################################")
+        print(f"text prompt: {text_prompt}")
+        print(f"ours: {ours}")
+        print(f"baseline: {baseline}")
 
 

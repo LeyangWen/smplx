@@ -254,23 +254,28 @@ class SMPLPose:
         mode = 'a' if concatenate else 'w'
         # write as txt file
         with open(loc_file, mode) as f:
-            f.write('3DSSPPBATCHFILE #\n') if concatenate == 0 or concatenate is False else f.write('\n')  # if first line, write header, else write new line
-            # f.write('COM #\n')  # comment
-            f.write(f'DES 1 "Task-{task_name}-{concatenate}" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
-            for i, k in enumerate(np.arange(start_frame, end_frame, step)):
-                joint_locations = np.array2string(loc[k], separator=' ', max_line_width=1000000, precision=3, suppress_small=True)[1:-1].replace('0. ', '0 ')
-                frame_i = i+int(concatenate)+1
-                f.write('FRM ' + str(frame_i) + ' #\n')
+            if concatenate == 0 or concatenate is False:  # this is the first line of document, write header
+                f.write('3DSSPPBATCHFILE #\n')
+                f.write('COM Setting anthropometry for all #\n')  # comment
                 if weigh_height[0] is None:
                     f.write(f'ANT 0 1  #\n')
                 else:
                     f.write(f'ANT 0 3 {weigh_height[1]} {weigh_height[0]} #\n')  # 2nd int: male 0, female 1; 3rd int: 95th is 0, 50th is 1, and 5th is 2, self-set 3 - followed by height , weight
-                # f.write(f'HAN 0 0 0 0 0 0 #\n')  # this seems to be causing bug in 3DSSPP after 800+ commands
+                f.write('COM Enabling auto output #\n')  # comment
+                f.write('AUT 1 #')  # auto output when ANT, HAN, JOA, JOI, and PPR commands are called
+            else:  # this concatenates the previous txt file, add new line first
+                f.write('\n')
+            f.write(f'DES 1 "Task-{task_name}-{concatenate}" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
+            for i, k in enumerate(np.arange(start_frame, end_frame, step)):
+                joint_locations = np.array2string(loc[k], separator=' ', max_line_width=1000000, precision=3, suppress_small=True)[1:-1].replace('0. ', '0 ')
+                frame_i = i+int(concatenate)  # start from frame 0 if concatenate is false
+                f.write('FRM ' + str(frame_i) + ' #\n')
+                                # f.write(f'HAN 0 0 0 0 0 0 #\n')  # this seems to be causing bug in 3DSSPP after 800+ commands
                 f.write(f'LOC {joint_locations} #\n')
-                # f.write('HAN 15 -20 85 15 -15 80 #\n')
-                # f.write('EXP #\n')
-                f.write('AUT 1 #')
-        return frame_i
+                f.write('HAN 15 -20 85 15 -15 80 #\n')
+            f.write(f'COM Task-{task_name}-{concatenate} done #')  # last line should have no new line character after
+
+        return frame_i+1  # +1 so that the next concatenate will start from the next frame
 
 
 
@@ -290,7 +295,7 @@ if __name__ == '__main__':
         # get all txt file with search_string in the filename
         motion_smpl_files = [filename for filename in os.listdir(motion_smpl_folder) if filename.lower().endswith('.npy') and os.path.isfile(os.path.join(motion_smpl_folder, filename)) and search_string in filename]
 
-        loc_file = f'{motion_smpl_folder}\\3DSSPP-all-{text_prompt}.txt'
+        loc_file = f'{motion_smpl_folder}\\3DSSPP-all-{text_prompt}-5.txt'
         last_frame_i = 0
         # for motion_i in range(30):
         # for motion_i in [15, 17, 23, 24, 42, 48]:
@@ -299,6 +304,7 @@ if __name__ == '__main__':
             # motion_smpl_file = f'G:\My Drive\DPM\\temp\smpl_pose_72_{motion_i}.npy'
             # motion_smpl_file = r'C:\Users\wenleyan1\Downloads\Baseline_smpl_pose_72.npy'
         for motion_i, motion_smpl_file in enumerate(motion_smpl_files):
+            if motion_i > 5: break
             print(f'processing {motion_i}:{motion_smpl_file}...')
             with open(os.path.join(motion_smpl_folder, motion_smpl_file), 'rb') as f:
                 motion_smpl = np.load(f, allow_pickle=True)[None][0]
