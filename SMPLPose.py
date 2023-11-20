@@ -28,6 +28,11 @@ class SMPLPose:
         self.faces = faces
         self.frame_number = joints.shape[0]
 
+    def downsample(self, step=3):
+        self.joints = self.joints[::step]
+        self.vertices = self.vertices[::step]
+        self.frame_number = self.joints.shape[0]
+
     def plot_vertices_frame(self, frame=0, plot_joints=False, filename=False, render_mode='matplotlib'):
         joints_frame = self.joints[frame]
         vertices_frame = self.vertices[frame]
@@ -149,11 +154,14 @@ class SMPLPose:
             output_filename = os.path.join(foldername, '00000000_merged.gif')
             imageio.mimsave(output_filename, images, duration=self.frame_number/fps, loop=100)
 
-    def export_3DSSPP_batch(self, loc_file=f'experiment/3DSSPPBatch.txt', weight=80, height=180, start_frame=0, end_frame=0, concatenate=0):
+    def export_3DSSPP_batch(self, loc_file=f'experiment/3DSSPPBatch.txt', weigh_height=None, start_frame=0, end_frame=0, concatenate=0, task_name=''):
+        """
+        :param loc_file: 3DSSPP batch file
+        :param weigh_height: [weight, height], if None, use default 50th percentile
+        :param concatenate: False or int, if not false, append to the end of the file at int(concatenate) frame
+        """
         '''
-        concatenate: if not false, append to the end of the file at int(concatenate) frame
-
-         # 1 - 3 Top Head Skin Surface
+        # 1 - 3 Top Head Skin Surface
         # 4 - 6 L. Head Skin Surface
         # 7 - 9 R. Head Skin Surface
         # 10 - 12 Head origin Virtual point
@@ -193,6 +201,8 @@ class SMPLPose:
         # 112 - 114 R. Ball of Foot Virtual point
         # 115 - 117 R. Metatarsalphalangeal Skin Surface
         '''
+        if weigh_height is None:
+            weigh_height = [80, 180]
         if end_frame == 0:
             end_frame = self.frame_number
         if start_frame != 0:
@@ -244,52 +254,71 @@ class SMPLPose:
         mode = 'a' if concatenate else 'w'
         # write as txt file
         with open(loc_file, mode) as f:
-            f.write('3DSSPPBATCHFILE #\n')
-            f.write('COM #\n')
-            f.write(f'DES 1 "Task-{concatenate}" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
+            f.write('3DSSPPBATCHFILE #\n') if concatenate == 0 or concatenate is False else f.write('\n')  # if first line, write header, else write new line
+            # f.write('COM #\n')  # comment
+            f.write(f'DES 1 "Task-{task_name}-{concatenate}" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
             for i, k in enumerate(np.arange(start_frame, end_frame, step)):
                 joint_locations = np.array2string(loc[k], separator=' ', max_line_width=1000000, precision=3, suppress_small=True)[1:-1].replace('0. ', '0 ')
-                frame_i = i+int(concatenate)
+                frame_i = i+int(concatenate)+1
                 f.write('FRM ' + str(frame_i) + ' #\n')
-                f.write(f'ANT 0 3 {height} {weight} #\n')  # male 0, female 1, self-set 3, height  , weight
+                if weigh_height[0] is None:
+                    f.write(f'ANT 0 1  #\n')
+                else:
+                    f.write(f'ANT 0 3 {weigh_height[1]} {weigh_height[0]} #\n')  # 2nd int: male 0, female 1; 3rd int: 95th is 0, 50th is 1, and 5th is 2, self-set 3 - followed by height , weight
                 # f.write(f'HAN 0 0 0 0 0 0 #\n')  # this seems to be causing bug in 3DSSPP after 800+ commands
                 f.write(f'LOC {joint_locations} #\n')
                 # f.write('HAN 15 -20 85 15 -15 80 #\n')
                 # f.write('EXP #\n')
-                f.write('AUT 1 #\n')
+                f.write('AUT 1 #')
         return frame_i
 
 
 
 if __name__ == '__main__':
-    motion_smpl_folder = r'C:\Users\Public\Documents\Vicon\vicon_coding_projects\smplx\experiment\text2pose-20231107T164009Z-001\text2pose\A_person_raise_both_hands_above_his_head_and_keep_them_there'
-    loc_file = f'{motion_smpl_folder}\\smpl_3DSSPP_batch_all.txt'
-    last_frame_i = 0
-    for motion_i in range(10):
-    # for motion_i in [15, 17, 23, 24, 42, 48]:
-        # motion_i = 42
-        motion_smpl_file = f'{motion_smpl_folder}\smpl_pose_72_{motion_i}.npy'
-        # motion_smpl_file = f'G:\My Drive\DPM\\temp\smpl_pose_72_{motion_i}.npy'
-        # motion_smpl_file = r'G:\My Drive\DPM\temp\motion_0.npy'
-        # todo: read height and bodymass from mb file or csv file
+    case = 0
+    if case == 0:  # get all 50 results in one txt for all text prompt
+        motion_smpl_folder_base = r'experiment\text2pose-20231113T194712Z-001\text2pose'
+        text_prompts = ['A_person_half_kneel_with_one_leg_to_work_near_the_floor',
+                        'A_person_half_squat_to_work_near_the_floor',
+                        'A_person_move_a_box_from_left_to_right',
+                        'A_person_raise_both_hands_above_his_head_and_keep_them_there',
+                        'A_person_squat_to_carry_up_something']
+        text_prompt = text_prompts[2]
+        motion_smpl_folder = f'{motion_smpl_folder_base}\\{text_prompt}'
 
-        with open(motion_smpl_file, 'rb') as f:
-            motion_smpl = np.load(f, allow_pickle=True)[None][0]
-            global_orient = motion_smpl[:, :3]
-            body_pose = motion_smpl[:, 3:]
-        frame_no = body_pose.shape[0]
-        smpl_object = SMPL(model_path=r'models\smpl\SMPL_NEUTRAL.pkl', batch_size=frame_no)
-        body_pose = torch.tensor(body_pose, dtype=torch.float32)
-        global_orient = torch.tensor(global_orient, dtype=torch.float32)
-        smpl_output = smpl_object.forward(beta=np.zeros(10), body_pose=body_pose, global_orient=global_orient)
-        joints = smpl_output.joints.detach().numpy()
-        vertices = smpl_output.vertices.detach().numpy()
-        faces = smpl_object.faces
+        search_string = "smpl_pose_72"
+        # get all txt file with search_string in the filename
+        motion_smpl_files = [filename for filename in os.listdir(motion_smpl_folder) if filename.lower().endswith('.npy') and os.path.isfile(os.path.join(motion_smpl_folder, filename)) and search_string in filename]
 
-        smpl_pose = SMPLPose()
-        smpl_pose.load_smpl(joints, vertices, faces)
+        loc_file = f'{motion_smpl_folder}\\3DSSPP-all-{text_prompt}.txt'
+        last_frame_i = 0
+        # for motion_i in range(30):
+        # for motion_i in [15, 17, 23, 24, 42, 48]:
+            # motion_i = 42
+            # motion_smpl_file = f'{motion_smpl_folder}\smpl_pose_72_{motion_i}.npy'
+            # motion_smpl_file = f'G:\My Drive\DPM\\temp\smpl_pose_72_{motion_i}.npy'
+            # motion_smpl_file = r'C:\Users\wenleyan1\Downloads\Baseline_smpl_pose_72.npy'
+        for motion_i, motion_smpl_file in enumerate(motion_smpl_files):
+            print(f'processing {motion_i}:{motion_smpl_file}...')
+            with open(os.path.join(motion_smpl_folder, motion_smpl_file), 'rb') as f:
+                motion_smpl = np.load(f, allow_pickle=True)[None][0]
+                global_orient = motion_smpl[:, :3]
+                body_pose = motion_smpl[:, 3:]
+            frame_no = body_pose.shape[0]
+            smpl_object = SMPL(model_path=r'models\smpl\SMPL_NEUTRAL.pkl', batch_size=frame_no)
+            body_pose = torch.tensor(body_pose, dtype=torch.float32)
+            global_orient = torch.tensor(global_orient, dtype=torch.float32)
+            smpl_output = smpl_object.forward(beta=np.zeros(10), body_pose=body_pose, global_orient=global_orient)
+            joints = smpl_output.joints.detach().numpy()
+            vertices = smpl_output.vertices.detach().numpy()
+            faces = smpl_object.faces
 
-        last_frame_i = smpl_pose.export_3DSSPP_batch(loc_file=loc_file, weight=90, height=180, concatenate=last_frame_i)
-        # smpl_pose.plot_vertices_frame(frame=30, plot_joints=True, render_mode='open3d')
-        # # smpl_pose.plot_vertices(foldername=f'{motion_smpl_folder}\smpl_pose_72_{motion_i}', make_gif=True, fps=30)
-        # break
+            smpl_pose = SMPLPose()
+            smpl_pose.load_smpl(joints, vertices, faces)
+            smpl_pose.downsample()
+
+            last_frame_i = smpl_pose.export_3DSSPP_batch(loc_file=loc_file, concatenate=last_frame_i, task_name=motion_smpl_file)
+            # smpl_pose.plot_vertices_frame(frame=0, plot_joints=True, render_mode='open3d')
+            # # smpl_pose.plot_vertices(foldername=f'{motion_smpl_folder}\smpl_pose_72_{motion_i}', make_gif=True, fps=30)
+    # elif case == 2:  # get one individual result
+
