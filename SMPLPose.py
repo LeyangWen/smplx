@@ -288,14 +288,15 @@ if __name__ == '__main__':
                         'A_person_move_a_box_from_left_to_right',
                         'A_person_raise_both_hands_above_his_head_and_keep_them_there',
                         'A_person_squat_to_carry_up_something']
-        text_prompt = text_prompts[2]
+        text_prompt = text_prompts[3]
         motion_smpl_folder = f'{motion_smpl_folder_base}\\{text_prompt}'
 
         search_string = "smpl_pose_72"
+        small_sample = 2  # only process the first 2 files, todo: remove when actually running
         # get all txt file with search_string in the filename
         motion_smpl_files = [filename for filename in os.listdir(motion_smpl_folder) if filename.lower().endswith('.npy') and os.path.isfile(os.path.join(motion_smpl_folder, filename)) and search_string in filename]
 
-        loc_file = f'{motion_smpl_folder}\\3DSSPP-all-{text_prompt}-5.txt'
+        loc_file = f'{motion_smpl_folder}\\3DSSPP-all-{text_prompt}-{small_sample}.txt'
         last_frame_i = 0
         # for motion_i in range(30):
         # for motion_i in [15, 17, 23, 24, 42, 48]:
@@ -304,7 +305,7 @@ if __name__ == '__main__':
             # motion_smpl_file = f'G:\My Drive\DPM\\temp\smpl_pose_72_{motion_i}.npy'
             # motion_smpl_file = r'C:\Users\wenleyan1\Downloads\Baseline_smpl_pose_72.npy'
         for motion_i, motion_smpl_file in enumerate(motion_smpl_files):
-            if motion_i > 5: break
+            if motion_i > small_sample: break
             print(f'processing {motion_i}:{motion_smpl_file}...')
             with open(os.path.join(motion_smpl_folder, motion_smpl_file), 'rb') as f:
                 motion_smpl = np.load(f, allow_pickle=True)[None][0]

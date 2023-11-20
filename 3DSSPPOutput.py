@@ -23,6 +23,7 @@ class SSPPOutput:
         self.header = []
         self.header_category = {}
         self.df = None
+        self.all_segments = {}
         self.segments = {}
         self.baseline_segments = {}
 
@@ -66,7 +67,7 @@ class SSPPOutput:
         else:
             return list(self.header_category.keys())
 
-    def cut_segment(self):
+    def cut_segment(self, baseline_key='Baseline'):
         """
         Input might contain multiple tasks, cut segments df by task name
         """
@@ -81,13 +82,14 @@ class SSPPOutput:
             frame_count = len(task_names[task_names == unique_task_name])
             start_frame = start_ids[_]
             end_frame = start_frame + frame_count
-            if "Baseline" in unique_task_name:
+            if baseline_key in unique_task_name:
                 baseline_segments[unique_task_name] = self.df.iloc[start_frame:end_frame, :]
             else:
                 segments[unique_task_name] = self.df.iloc[start_frame:end_frame, :]
             # print(segments[unique_task_name]['Info - Task Name'])
-        self.segments = segments if unique_task_len > 1 else baseline_segments
+        self.segments = segments
         self.baseline_segments = baseline_segments
+        self.all_segments = {**baseline_segments, **segments}
         return unique_task_names, unique_task_len
 
     def eval_segment(self, segments, segment_eval_keys, verbose=False):
@@ -126,7 +128,7 @@ class SSPPOutput:
         Visualize segment results
 
         Parameters:
-        segments (dict): A dictionary of segments. For example, self.segments or self.baseline_segments, you can also pass in self.segments['key'] for one segment.
+        segments (dict): A dictionary of segments. In this version, you should pass in self.all_segments for good visuals. todo: allow for part of segments
         segment_eval_keys (str or list): A key for evaluation. For example, 'Summary - Minimum Shoulder Percentile'.
                                          It can also be a list of such keys.
         verbose (bool, optional): If True, print detailed information during evaluation. Defaults to False.
@@ -145,8 +147,7 @@ class SSPPOutput:
         # plot each segment in sequence, with a gray vertical line in between
         for eval_key_idx, eval_key in enumerate(segment_eval_keys):
             axs[eval_key_idx].set_title(eval_key)  # subheading
-            # total_frame_count = len(segments[list(segments.keys())[eval_key_idx]][eval_key])  # Count the total frame count for each segment
-            # axs[eval_key_idx].set_xlim(0, total_frame_count-1)  # Set x-axis limit for each subplot
+            axs[eval_key_idx].set_xlim(0, total_frame_count-1)  # Set x-axis limit for each subplot
             if "Percentile" in eval_key:
                 axs[eval_key_idx].set_ylim(0, 110)
             for _key, _value in segments.items():
@@ -297,15 +298,15 @@ if __name__ == "__main__":
     if case == 0:  # visualization example
         # load file
         input_3DSSPP_folder = r'experiment\example'
-        input_3DSSPP_files = ['wrapper_multi_task.txt', 'wrapper_single_task.txt']
+        input_3DSSPP_files = ['wrapper_multi_task.txt', 'wrapper_single_task.txt', 'test.txt']
         input_3DSSPP_file = input_3DSSPP_files[0]
 
-        result = SSPPV7Output()
+        result = SSPPV7WrapperOutput()
         result.load_file(os.path.join(input_3DSSPP_folder, input_3DSSPP_file))
         result.cut_segment()
 
         eval_keys = result.show_category(subcategory='Summary')[:-3]
-        result.visualize_segment(result.segments, segment_eval_keys=eval_keys, verbose=True)
+        result.visualize_segment(result.all_segments, segment_eval_keys=eval_keys, verbose=True)
 
 
     elif case == 1:  # mass evaluation example
