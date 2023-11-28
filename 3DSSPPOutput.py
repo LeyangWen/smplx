@@ -158,9 +158,6 @@ class SSPPOutput:
             plt.show()
 
 
-
-
-
 class SSPPV6Output(SSPPOutput):
     def __init__(self):
         super().__init__()
@@ -301,8 +298,10 @@ if __name__ == "__main__":
         input_3DSSPP_files = ['wrapper_multi_task.txt', 'wrapper_single_task.txt', 'test.txt']
         input_3DSSPP_file = input_3DSSPP_files[0]
 
-        result = SSPPV7WrapperOutput()
-        result.load_file(os.path.join(input_3DSSPP_folder, input_3DSSPP_file))
+        input_3DSSPP_file = r"C:\Users\wenleyan1\Downloads\wrapper_new.txt"
+        input_3DSSPP_file = r"C:\Users\wenleyan1\Desktop\wrapper output\GUI-output.txt"
+        result2 = SSPPV7Output()
+        result2.load_file(os.path.join(input_3DSSPP_folder, input_3DSSPP_file))
         result.cut_segment()
 
         eval_keys = result.show_category(subcategory='Summary')[:-3]

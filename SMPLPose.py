@@ -258,9 +258,10 @@ class SMPLPose:
                 f.write('3DSSPPBATCHFILE #\n')
                 f.write('COM Setting anthropometry for all #\n')  # comment
                 if weigh_height[0] is None:
-                    f.write(f'ANT 0 1  #\n')
+                    f.write(f'ANT 0 1 #\n')
                 else:
-                    f.write(f'ANT 0 3 {weigh_height[1]} {weigh_height[0]} #\n')  # 2nd int: male 0, female 1; 3rd int: 95th is 0, 50th is 1, and 5th is 2, self-set 3 - followed by height , weight
+                    f.write(f'DES 1 "Task-{task_name}-{concatenate}" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
+                    f.write(f'ANT 0 3 {weigh_height[1]} {weigh_height[0]} #\n')  # 2nd int: male 0, female 1; 3rd int: 95th is 0, 50th is 1, and 5th is 2, self-set 3 - followed by height , weight (need to set DES 1 before this to set metric)
                 f.write('COM Enabling auto output #\n')  # comment
                 f.write('AUT 1 #')  # auto output when ANT, HAN, JOA, JOI, and PPR commands are called
             else:  # this concatenates the previous txt file, add new line first
