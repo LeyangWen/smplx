@@ -12,6 +12,7 @@ import open3d as o3d
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 import trimesh
+import geometry_tools
 
 class SMPLPose:
     def __init__(self):
@@ -200,6 +201,8 @@ class SMPLPose:
         # 109 - 111 R. Lateral Malleolus Skin Surface
         # 112 - 114 R. Ball of Foot Virtual point
         # 115 - 117 R. Metatarsalphalangeal Skin Surface
+        https://github.com/VelocityEHS/3DSSPP/blob/7dc4fbeb55a52be689cdca3f540cd124c7aee89c/homLib/Task.cpp#L954
+        https://github.com/VelocityEHS/3DSSPP/blob/main/c4eLibNew/ConvertPointsToAngles.cpp#L14
         '''
         if weigh_height is None:
             weigh_height = [80, 180]
@@ -289,7 +292,7 @@ if __name__ == '__main__':
                         'A_person_move_a_box_from_left_to_right',
                         'A_person_raise_both_hands_above_his_head_and_keep_them_there',
                         'A_person_squat_to_carry_up_something']
-        text_prompt = text_prompts[3]
+        text_prompt = text_prompts[2]
         motion_smpl_folder = f'{motion_smpl_folder_base}\\{text_prompt}'
 
         search_string = "smpl_pose_72"

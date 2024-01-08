@@ -107,3 +107,4 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+/3DSSPP_v7_cli/

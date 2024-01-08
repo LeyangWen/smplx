@@ -73,6 +73,7 @@ class SSPPOutput:
         """
         segments = {}
         baseline_segments = {}
+        # info_name = result.df.keys().item()
         task_names = self.df['Info - Task Name']
         _, start_ids = np.unique(task_names, return_index=True)
         start_ids = np.sort(start_ids)
@@ -268,45 +269,26 @@ class SSPPV7Output(SSPPOutput):
         self.df = df
 
 
-class SSPPV7WrapperOutput(SSPPV7Output):
-    def __init__(self):
-        super().__init__()
-
-    def load_file(self, file):
-        """
-        3DSSPP v7 wrapper generates a .txt file with one header in the front
-        load .txt file as csv text and read into dict with subheaders
-        """
-        df = pd.read_csv(file, header=None, skiprows=1)  # skip first line, it is header
-        header = list(pd.read_csv(file, header=None, nrows=1).iloc[0, :].values)  # read first row
-        if True:  # todo: small bug in wrapper, temp fix to remove some data
-            search_key = 'Fatigue Start'
-            key_idx = header.index(search_key)
-            header = header[:key_idx]
-            df = df.iloc[:, :key_idx]
-        self.set_header(header=header)
-        df.columns = self.header
-        self.df = df
-
-
 if __name__ == "__main__":
     case = 0
 
     if case == 0:  # visualization example
         # load file
-        input_3DSSPP_folder = r'experiment\example'
+        input_3DSSPP_folder = r'experiment'
         input_3DSSPP_files = ['wrapper_multi_task.txt', 'wrapper_single_task.txt', 'test.txt']
         input_3DSSPP_file = input_3DSSPP_files[0]
 
-        input_3DSSPP_file = r"C:\Users\wenleyan1\Downloads\wrapper_new.txt"
-        input_3DSSPP_file = r"C:\Users\wenleyan1\Desktop\wrapper output\GUI-output.txt"
-        result2 = SSPPV7Output()
-        result2.load_file(os.path.join(input_3DSSPP_folder, input_3DSSPP_file))
+        input_3DSSPP_file = r"text2pose-20231113T194712Z-001\text2pose\A_person_squat_to_carry_up_something\3DSSPP-all-A_person_squat_to_carry_up_something-2_export.txt"
+        result = SSPPV7Output()
+        result.load_file(os.path.join(input_3DSSPP_folder, input_3DSSPP_file))
         result.cut_segment()
 
-        eval_keys = result.show_category(subcategory='Summary')[:-3]
+        eval_keys = result.show_category(subcategory='Strength Capability Percentile')[-6:-3]
         result.visualize_segment(result.all_segments, segment_eval_keys=eval_keys, verbose=True)
 
+
+        # eval_keys = result.show_category(subcategory='Summary')[:-3]
+        # result.visualize_segment(result.all_segments, segment_eval_keys=eval_keys, verbose=True)
 
     elif case == 1:  # mass evaluation example
         motion_smpl_folder_base = r'experiment\text2pose-20231113T194712Z-001\text2pose'
