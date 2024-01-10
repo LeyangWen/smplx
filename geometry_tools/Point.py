@@ -6,10 +6,19 @@ import os
 
 
 class Point():
-    def __init__(self):
+    def __init__(self, data=None, name=None):
         self.random_id = np.random.randint(0, 100000000)
-        self.name = None
-        pass
+        self.name = name
+        if data is not None:
+            self.data = data.reshape(-1, 3)
+            self.type = 'point'
+            self.x, self.y, self.z = data.T
+            self.xyz = np.array([self.x, self.y, self.z])
+            self.x = self.xyz[0]
+            self.y = self.xyz[1]
+            self.z = self.xyz[2]
+            self.frame_no = self.data.shape[0]
+            self.exist = np.ones(self.frame_no, dtype=bool).tolist()
 
     def copy(self):
         copied_point = MarkerPoint([self.x, self.y, self.z, self.exist])
@@ -241,6 +250,7 @@ class VirtualPoint(Point):
 
     def output_format(self):
         return (self.xyz, self.exist)
+
 
 
 class Plane:

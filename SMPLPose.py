@@ -12,7 +12,7 @@ import open3d as o3d
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 import trimesh
-import geometry_tools
+from geometry_tools import *
 
 class SMPLPose:
     def __init__(self):
@@ -155,7 +155,19 @@ class SMPLPose:
             output_filename = os.path.join(foldername, '00000000_merged.gif')
             imageio.mimsave(output_filename, images, duration=self.frame_number/fps, loop=100)
 
-    def export_3DSSPP_batch(self, loc_file=f'experiment/3DSSPPBatch.txt', weigh_height=None, start_frame=0, end_frame=0, concatenate=0, task_name='', pelvic_tilt=50):
+
+    def get_pelvic_tilt(self, loc, k):
+        l_knee = Point(loc[k, 78:81])
+        r_knee = Point(loc[k, 99:102])
+        knee = Point.mid_point(l_knee, r_knee)
+        L5S1 = Point(loc[k, 27:30])
+        C7T1 = Point(loc[k, 18:21])
+        angle = np.pi - Point.angle(Point.vector(L5S1, knee).xyz, Point.vector(L5S1, C7T1).xyz)
+        angle = int(angle/np.pi*180*0.75)
+        print(f'pelvic tilt: {angle} degree')
+        return angle
+
+    def export_3DSSPP_batch(self, loc_file=f'experiment/3DSSPPBatch.txt', weigh_height=None, start_frame=0, end_frame=0, concatenate=0, task_name=''):
         """
         :param loc_file: 3DSSPP batch file
         :param weigh_height: [weight, height], if None, use default 50th percentile
@@ -266,7 +278,6 @@ class SMPLPose:
                 else:
                     f.write(f'DES 1 "Task-{task_name}-{concatenate}" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
                     f.write(f'ANT 0 3 {weigh_height[1]} {weigh_height[0]} #\n')  # 2nd int: male 0, female 1; 3rd int: 95th is 0, 50th is 1, and 5th is 2, self-set 3 - followed by height , weight (need to set DES 1 before this to set metric)
-                f.write(f'SUP 0 0 0 0 20.0 {pelvic_tilt} #\n')  # support type: stand both feet
                 f.write('COM Enabling auto output #\n')  # comment
                 f.write('AUT 1 #')  # auto output when ANT, HAN, JOA, JOI, and PPR commands are called
             else:  # this concatenates the previous txt file, add new line first
@@ -279,6 +290,9 @@ class SMPLPose:
                 ### frame body ###
                 f.write('FRM ' + str(frame_i) + ' #\n')
                 f.write(f'LOC {joint_locations} #\n')
+
+                pelvic_tilt = self.get_pelvic_tilt(loc, k)
+                f.write(f'SUP 0 0 0 0 20.0 {pelvic_tilt} #\n')  # support type: stand both feet
                 f.write(f'HAN 0 0 0 0 0 0 #\n')  # HAN can trigger output write line
             ### file end line ###
             f.write(f'COM Task-{task_name}-{concatenate} done #')  # last line should have no new line character after

@@ -30,7 +30,7 @@ def wait_for_file_update(output_file, initial_mtime):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='SMPLPose')
-    parser.add_argument('--small_sample', type=int, default=12, help='only process the first n files for testing, set to a large number to process all')
+    parser.add_argument('--small_sample', type=int, default=3, help='only process the first n files for testing, set to a large number to process all')
     parser.add_argument('--motion_smpl_base_dir', type=str, default=r'experiment\text2pose-20231113T194712Z-001\text2pose'
                         , help='motion smpl directory')
     parser.add_argument('--search_string', type=str, default='smpl_pose_72', help='search string for motion smpl files')
@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     # save a copy of the output file
     cp_export_file = loc_file.replace('.txt', '_export.txt')
-    subprocess.call(['cp', export_file, cp_export_file], shell=True)
+    os.system(f'copy {export_file} {cp_export_file}')
 
     ########################### Step 3: Analyze the output txt file ###########################
     # load file
