@@ -2,6 +2,10 @@ import argparse
 import subprocess
 import os
 import time
+import numpy as np
+import torch
+from smplx.body_models import SMPL
+from matplotlib import pyplot as plt
 
 from SMPLPose import SMPLPose
 from SSPPOutput import SSPPV7Output
@@ -16,54 +20,47 @@ def wait_for_file_update(output_file, initial_mtime):
                 if current_mtime != os.stat(output_file).st_mtime:
                     print(f"Waiting for the output file finish writing: {current_mtime} -> {os.stat(output_file).st_mtime}", end='\r')
                     current_mtime = os.stat(output_file).st_mtime
-                    time.sleep(1)
+                    time.sleep(4)
                 else:
                     print("Finished writing the output file", end="\r")
-                    time.sleep(1)
+                    time.sleep(2)
                     break
             break
 
 
-
 def parse_args():
     parser = argparse.ArgumentParser(description='SMPLPose')
-    parser.add_argument('--small_sample', type=int, default=2, help='only process the first 2 files for testing')
-    parser.add_argument('--input_dir', type=str, default='3DSSPP_v7_cli/', help='input text file directory')
-    parser.add_argument('--input_file', type=str, default='example_input_batch.txt', help='input text file')
-    parser.add_argument('--output_dir', type=str, default='path_to_your_output_dir', help='output directory')
-    parser.add_argument('--output_file', type=str, default='path_to_your_output_file', help='output file')
+    parser.add_argument('--small_sample', type=int, default=12, help='only process the first n files for testing, set to a large number to process all')
+    parser.add_argument('--motion_smpl_base_dir', type=str, default=r'experiment\text2pose-20231113T194712Z-001\text2pose'
+                        , help='motion smpl directory')
+    parser.add_argument('--search_string', type=str, default='smpl_pose_72', help='search string for motion smpl files')
 
-    return parser.parse_args()
-
-
-if __name__ == '__main__':
-    args = parse_args()
-
-
-    ########################### Step 1: load SMPLPose object ###########################
-    motion_smpl_folder_base = r'experiment\text2pose-20231113T194712Z-001\text2pose'
+    ### text prompts ###
+    parser.add_argument('--text_prompt_idx', type=int, default=4, help='text prompt index')
     text_prompts = ['A_person_half_kneel_with_one_leg_to_work_near_the_floor',
                     'A_person_half_squat_to_work_near_the_floor',
                     'A_person_move_a_box_from_left_to_right',
                     'A_person_raise_both_hands_above_his_head_and_keep_them_there',
                     'A_person_squat_to_carry_up_something']
-    text_prompt = text_prompts[2]
-    motion_smpl_folder = f'{motion_smpl_folder_base}\\{text_prompt}'
+    parser.add_argument('--text_prompts', type=list, default=text_prompts, help='text prompts')
+    _args = parser.parse_args()
+    _args.text_prompt = _args.text_prompts[_args.text_prompt_idx]
+    return _args
 
-    search_string = "smpl_pose_72"
-    small_sample = 2  # only process the first 2 files, todo: remove when actually running
+
+if __name__ == '__main__':
+    args = parse_args()
+
+    ########################### Step 1: load npy motions into 3DSSPP loc files ###########################
+    motion_smpl_folder = f'{args.motion_smpl_base_dir}\\{args.text_prompt}'
+    search_string = args.search_string
+    small_sample = args.small_sample
     # get all txt file with search_string in the filename
     motion_smpl_files = [filename for filename in os.listdir(motion_smpl_folder) if
                          filename.lower().endswith('.npy') and os.path.isfile(os.path.join(motion_smpl_folder, filename)) and search_string in filename]
 
-    loc_file = f'{motion_smpl_folder}\\3DSSPP-all-{text_prompt}-{small_sample}.txt'
+    loc_file = f'{motion_smpl_folder}\\3DSSPP-all-{args.text_prompt}-{small_sample}.txt'  # intermediate output file
     last_frame_i = 0
-    # for motion_i in range(30):
-    # for motion_i in [15, 17, 23, 24, 42, 48]:
-    # motion_i = 42
-    # motion_smpl_file = f'{motion_smpl_folder}\smpl_pose_72_{motion_i}.npy'
-    # motion_smpl_file = f'G:\My Drive\DPM\\temp\smpl_pose_72_{motion_i}.npy'
-    # motion_smpl_file = r'C:\Users\wenleyan1\Downloads\Baseline_smpl_pose_72.npy'
     for motion_i, motion_smpl_file in enumerate(motion_smpl_files):
         if motion_i > small_sample: break
         print(f'processing {motion_i}:{motion_smpl_file}...')
@@ -82,28 +79,29 @@ if __name__ == '__main__':
 
         smpl_pose = SMPLPose()
         smpl_pose.load_smpl(joints, vertices, faces)
-        smpl_pose.downsample()
+        smpl_pose.downsample(step=5)
 
         last_frame_i = smpl_pose.export_3DSSPP_batch(loc_file=loc_file, concatenate=last_frame_i, task_name=motion_smpl_file)
 
-    # Get the initial modification time of the output file
-    output_file = '3DSSPP_v7_cli/export/batchinput_export.txt'
-    initial_mtime = os.stat(output_file).st_mtime
-
     ########################### Step 2: Run 3DSSPP ###########################
-    subprocess.call(['bash', '3DSSPP-script.sh', 'example_input_batch.txt'], shell=True, cwd='3DSSPP_v7_cli/')
-    wait_for_file_update(output_file, initial_mtime)  # Wait for the output file to be updated
+    # Get the initial modification time of the output file
+    export_file = '3DSSPP_v7_cli/export/batchinput_export.txt'  # constant if using wrapper
+    initial_mtime = os.stat(export_file).st_mtime
+    loc_file = '../' + loc_file.replace('\\', '/')  # relative path to the loc file
+    print(f"\n{'@' * 30} Subprocess start {'@' * 30}")
+    subprocess.call(['bash', '3DSSPP-script.sh', loc_file], shell=True, cwd='3DSSPP_v7_cli/')
+    # careful to look for errors messages in terminal for the subprocess, will not stop code
+    wait_for_file_update(export_file, initial_mtime)  # Wait for the output file to be updated
+    print(f"\n{'@' * 30} Subprocess end {'@' * 30}\n")
 
+    # save a copy of the output file
+    cp_export_file = loc_file.replace('.txt', '_export.txt')
+    subprocess.call(['cp', export_file, cp_export_file], shell=True)
 
-    ########################### Step 3: Analyze the output ###########################
+    ########################### Step 3: Analyze the output txt file ###########################
     # load file
-    input_3DSSPP_folder = r'experiment'
-    input_3DSSPP_files = ['wrapper_multi_task.txt', 'wrapper_single_task.txt', 'test.txt']
-    input_3DSSPP_file = input_3DSSPP_files[0]
-
-    input_3DSSPP_file = r"text2pose-20231113T194712Z-001\text2pose\A_person_squat_to_carry_up_something\3DSSPP-all-A_person_squat_to_carry_up_something-2_export.txt"
     result = SSPPV7Output()
-    result.load_file(os.path.join(input_3DSSPP_folder, input_3DSSPP_file))
+    result.load_file(export_file)
     result.cut_segment()
 
     result.show_category(subcategory='Summary')

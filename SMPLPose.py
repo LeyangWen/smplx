@@ -155,7 +155,7 @@ class SMPLPose:
             output_filename = os.path.join(foldername, '00000000_merged.gif')
             imageio.mimsave(output_filename, images, duration=self.frame_number/fps, loop=100)
 
-    def export_3DSSPP_batch(self, loc_file=f'experiment/3DSSPPBatch.txt', weigh_height=None, start_frame=0, end_frame=0, concatenate=0, task_name=''):
+    def export_3DSSPP_batch(self, loc_file=f'experiment/3DSSPPBatch.txt', weigh_height=None, start_frame=0, end_frame=0, concatenate=0, task_name='', pelvic_tilt=50):
         """
         :param loc_file: 3DSSPP batch file
         :param weigh_height: [weight, height], if None, use default 50th percentile
@@ -221,9 +221,9 @@ class SMPLPose:
         # # loc[:,15:18]      =                                   # 16 - 18 Sight end Virtual point
         loc[:, 18:21] = self.joints[:, 12, :]  # 19 - 21 C7/T1 Joint Center
         loc[:, 21:24] = (self.vertices[:, 2812, :] + (self.joints[:, 13, :] + self.joints[:, 14, :]) / 2) / 2  # 22 - 24 Sternoclavicular Joint Joint Center
-        loc[:, 24:27] = self.vertices[:, 2812, :]  # 25 - 27 Suprasternale Skin Surface
-        loc[:, 27:30] = self.joints[:, 0, :]*0.5 + self.vertices[:, 3158, :]*0.5  # 28 - 30 L5/S1 Joint Center
-        loc[:, 30:33] = self.joints[:, 0, :]*0.1 + self.vertices[:, 3159, :]*0.9  # 31 - 33 PSIS Joint Center
+        # loc[:, 24:27] = self.vertices[:, 2812, :]  # 25 - 27 Suprasternale Skin Surface
+        loc[:, 27:30] = self.vertices[:, 3158, :]  # 28 - 30 L5/S1 Joint Center
+        # loc[:, 30:33] = self.joints[:, 0, :]*0.1 + self.vertices[:, 3159, :]*0.9  # 31 - 33 PSIS Joint Center
         loc[:, 33:36] = self.joints[:, 16, :]  # 34 - 36 L. Shoulder Joint Center
         loc[:, 36:39] = self.vertices[:, 1821, :]  # 37 - 39 L. Acromion Skin Surface
         loc[:, 39:42] = self.joints[:, 18, :]  # 40 - 42 L. Elbow Joint Center
@@ -258,6 +258,7 @@ class SMPLPose:
         # write as txt file
         with open(loc_file, mode) as f:
             if concatenate == 0 or concatenate is False:  # this is the first line of document, write header
+                ### header ###
                 f.write('3DSSPPBATCHFILE #\n')
                 f.write('COM Setting anthropometry for all #\n')  # comment
                 if weigh_height[0] is None:
@@ -265,18 +266,21 @@ class SMPLPose:
                 else:
                     f.write(f'DES 1 "Task-{task_name}-{concatenate}" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
                     f.write(f'ANT 0 3 {weigh_height[1]} {weigh_height[0]} #\n')  # 2nd int: male 0, female 1; 3rd int: 95th is 0, 50th is 1, and 5th is 2, self-set 3 - followed by height , weight (need to set DES 1 before this to set metric)
+                f.write(f'SUP 0 0 0 0 20.0 {pelvic_tilt} #\n')  # support type: stand both feet
                 f.write('COM Enabling auto output #\n')  # comment
                 f.write('AUT 1 #')  # auto output when ANT, HAN, JOA, JOI, and PPR commands are called
             else:  # this concatenates the previous txt file, add new line first
                 f.write('\n')
+            ### segment header ###
             f.write(f'DES 1 "Task-{task_name}-{concatenate}" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
             for i, k in enumerate(np.arange(start_frame, end_frame, step)):
                 joint_locations = np.array2string(loc[k], separator=' ', max_line_width=1000000, precision=3, suppress_small=True)[1:-1].replace('0. ', '0 ')
                 frame_i = i+int(concatenate)  # start from frame 0 if concatenate is false
+                ### frame body ###
                 f.write('FRM ' + str(frame_i) + ' #\n')
-                                # f.write(f'HAN 0 0 0 0 0 0 #\n')  # this seems to be causing bug in 3DSSPP after 800+ commands
                 f.write(f'LOC {joint_locations} #\n')
-                f.write('HAN 15 -20 85 15 -15 80 #\n')
+                f.write(f'HAN 0 0 0 0 0 0 #\n')  # HAN can trigger output write line
+            ### file end line ###
             f.write(f'COM Task-{task_name}-{concatenate} done #')  # last line should have no new line character after
 
         return frame_i+1  # +1 so that the next concatenate will start from the next frame
