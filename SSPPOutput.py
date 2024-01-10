@@ -111,15 +111,19 @@ class SSPPOutput:
         min_score_per_task = []
         for _key, _value in segments.items():
             segment_min_list = []
+            segment_mean_list = []
             for eval_key in segment_eval_keys:
-                frame_min = _value[eval_key].min()
-                frame_mean = _value[eval_key].mean()
+                frame_min = _value[eval_key].min()  # min value of each evaluation key
+                frame_mean = _value[eval_key].mean()  # mean value of each evaluation key over the session
                 selected = frame_min
                 segment_min_list.append(selected)
+                segment_mean_list.append(frame_mean)
                 if verbose:
                     print(f"{_key}-{eval_key}: {selected}")
             segment_min_mean = np.mean(segment_min_list)
-            min_score_per_task.append(segment_min_mean)
+            segment_min_min = np.min(segment_min_list)
+            segment_mean_min = np.min(segment_mean_list)
+            min_score_per_task.append(segment_mean_min)
         task_id_w_max_score = np.argmax(min_score_per_task)
         task_w_max_score = list(segments.keys())[task_id_w_max_score]
         return task_id_w_max_score, min_score_per_task[task_id_w_max_score], task_w_max_score

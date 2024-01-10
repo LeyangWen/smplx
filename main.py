@@ -106,5 +106,27 @@ if __name__ == '__main__':
     result.load_file(os.path.join(input_3DSSPP_folder, input_3DSSPP_file))
     result.cut_segment()
 
-    eval_keys = result.show_category(subcategory='Strength Capability Percentile')[-6:-3]
+    result.show_category(subcategory='Summary')
+    result.show_category()
+
+    eval_keys = result.show_category(subcategory='Summary')[:-3]
     result.visualize_segment(result.all_segments, segment_eval_keys=eval_keys, verbose=True)
+
+    # eval_keys = result.show_category(subcategory='Strength Value')[-6:-3] + result.show_category(subcategory='Strength Capability Percentile')[-6:-3]
+    # result.visualize_segment(result.all_segments, segment_eval_keys=eval_keys, verbose=True)
+
+    # eval_keys = result.show_category(subcategory='Strength Capability Percentile')[-6:-3]
+    # result.visualize_segment(result.all_segments, segment_eval_keys=eval_keys, verbose=True)
+    #
+    # eval_keys = result.show_category(subcategory='Posture Angles')[-7:]
+    # result.visualize_segment(result.all_segments, segment_eval_keys=eval_keys, verbose=True)
+
+    eval_keys = result.show_category(subcategory='Strength Capability Percentile')
+
+    ours = result.eval_segment(result.segments, eval_keys)
+    result.eval_segment(result.segments[ours[-1]], eval_keys, verbose=True)
+    baseline = result.eval_segment(result.baseline_segments, eval_keys, verbose=True)
+    print("##################################################")
+    print(f"text prompt: {args.text_prompt}")
+    print(f"ours: {ours}")
+    print(f"baseline: {baseline}")
