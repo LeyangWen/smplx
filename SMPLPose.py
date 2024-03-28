@@ -12,7 +12,7 @@ import open3d as o3d
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 import trimesh
-from geometry_tools import *
+from ergo3d import *
 
 class SMPLPose:
     def __init__(self):
@@ -34,7 +34,7 @@ class SMPLPose:
         self.vertices = self.vertices[::step]
         self.frame_number = self.joints.shape[0]
 
-    def plot_vertices_frame(self, frame=0, plot_joints=False, filename=False, render_mode='matplotlib'):
+    def plot_vertices_frame(self, frame=0, plot_joints=False, filename=False, render_mode='matplotlib', render_coordinate=False):
         joints_frame = self.joints[frame]
         vertices_frame = self.vertices[frame]
         if render_mode == 'matplotlib':
@@ -57,8 +57,10 @@ class SMPLPose:
                 #             if point_of_interest[2] < -0.1 and point_of_interest[2] > -0.2:
                 #                 ax.scatter(point_of_interest[0], point_of_interest[1], point_of_interest[2], alpha=1, color='b')
                 #                 ax.text(point_of_interest[0], point_of_interest[1], point_of_interest[2], str(vertices_index), color='b')
-            # lowwer view angle
-            ax.view_init(elev=20, azim=-60)
+            # lower view angle
+            # ax.view_init(elev=20, azim=-60)
+            # front view angle
+            ax.view_init(elev=0, azim=-90)
 
             plot_range = 1.800
             pelvis_loc = self.joints[frame, 0, :]
@@ -68,6 +70,12 @@ class SMPLPose:
             ax.set_xlabel('X (m)')
             ax.set_ylabel('Y (m)')
             ax.set_zlabel('Z (m)')
+            if not render_coordinate:
+                # Remove grid
+                ax.grid(False)
+                # Remove axes
+                ax.axis('off')
+
             fig.tight_layout()
             if filename:
                 plt.savefig(filename, dpi=250)
@@ -255,14 +263,16 @@ class SMPLPose:
         loc[:, 81:84] = self.vertices[:, 1010, :]  # 82 - 84 L. Lat. Epicon. of Femur Skin Surface
         loc[:, 84:87] = self.joints[:, 7, :]  # 85 - 87 L. Ankle Joint Center
         # loc[:, 87:90]       =                                   # 88 - 90 L. Lateral Malleolus Skin Surface
-        loc[:, 90:93] = self.joints[:, 10, :]  # 91 - 93 L. Ball of Foot Virtual point
+        loc[:, 90:93] = self.joints[:, 10, :] * 0.5 + self.joints[:, 7, :] * 0.5   # 91 - 93 L. Ball of Foot Virtual point
+        loc[:, 93] = loc[:, 93] - 0.03
         # loc[:, 93:96]       =                                   # 94 - 96 L. Metatarsalphalangeal Skin Surface
         loc[:, 96:99] = self.joints[:, 2, :] * 0.8 + self.joints[:, 5, :] * 0.2  # 97 - 99 R. Hip Joint Center
         loc[:, 99:102] = self.joints[:, 5, :]  # 100 - 102 R. Knee Joint Center
         loc[:, 102:105] = self.vertices[:, 4539, :]  # 103 - 105 R. Lat. Epicon. of Femur Skin Surface
         loc[:, 105:108] = self.joints[:, 8, :]  # 106 - 108 R. Ankle Joint Center
         # loc[:, 108:111]     =                                   # 109 - 111 R. Lateral Malleolus Skin Surface
-        loc[:, 111:114] = self.joints[:, 11, :]  # 112 - 114 R. Ball of Foot Virtual point
+        loc[:, 111:114] = self.joints[:, 11, :] * 0.5 + self.joints[:, 8, :] * 0.5   # 112 - 114 R. Ball of Foot Virtual point
+        loc[:, 114] = loc[:, 114] - 0.03
         # loc[:, 114:117]     =                                   # 115 - 117 R. Metatarsalphalangeal Skin Surface
 
         assert isinstance(concatenate, int) if concatenate else True
@@ -279,7 +289,7 @@ class SMPLPose:
                     f.write(f'DES 1 "Task-{task_name}-{concatenate}" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
                     f.write(f'ANT 0 3 {weigh_height[1]} {weigh_height[0]} #\n')  # 2nd int: male 0, female 1; 3rd int: 95th is 0, 50th is 1, and 5th is 2, self-set 3 - followed by height , weight (need to set DES 1 before this to set metric)
                 f.write('COM Enabling auto output #\n')  # comment
-                f.write('AUT 1 #')  # auto output when ANT, HAN, JOA, JOI, and PPR commands are called
+                f.write('AUT 1 #\n')  # auto output when ANT, HAN, JOA, JOI, and PPR commands are called
             else:  # this concatenates the previous txt file, add new line first
                 f.write('\n')
             ### segment header ###
@@ -293,9 +303,10 @@ class SMPLPose:
 
                 pelvic_tilt = self.get_pelvic_tilt(loc, k)
                 f.write(f'SUP 0 0 0 0 20.0 {pelvic_tilt} #\n')  # support type: stand both feet
-                f.write(f'HAN 0 0 0 0 0 0 #\n')  # HAN can trigger output write line
+                hand_load = 10  # N
+                f.write(f'HAN {hand_load / 2} -90 0 {hand_load / 2} -90 0 #\n')  # HAN can trigger output write line
             ### file end line ###
-            f.write(f'COM Task-{task_name}-{concatenate} done #')  # last line should have no new line character after
+          # last line should have no new line character after
 
         return frame_i+1  # +1 so that the next concatenate will start from the next frame
 
@@ -304,17 +315,20 @@ class SMPLPose:
 if __name__ == '__main__':
     case = 0
     if case == 0:  # get all 50 results in one txt for all text prompt
-        motion_smpl_folder_base = r'experiment\text2pose-20231113T194712Z-001\text2pose'
-        text_prompts = ['A_person_half_kneel_with_one_leg_to_work_near_the_floor',
-                        'A_person_half_squat_to_work_near_the_floor',
-                        'A_person_move_a_box_from_left_to_right',
+        motion_smpl_folder_base = r'experiment\text2pose\text2pose'
+        text_prompts = ['A_standing_person_squat_down_to_work_on_something_near_the_floor',
                         'A_person_raise_both_hands_above_his_head_and_keep_them_there',
-                        'A_person_squat_to_carry_up_something']
-        text_prompt = text_prompts[2]
+                        'A_person_squat_to_carry_up_something',
+                        'A_person_move_a_box_from_left_to_right']
+        text_prompt = text_prompts[0]
+        small_sample = 1000  # only process the first 2 files, todo: remove when actually running
+        select_motion_list = ['25', '15', '14', '13', '11', '12', '72']
+
+
         motion_smpl_folder = f'{motion_smpl_folder_base}\\{text_prompt}'
 
         search_string = "smpl_pose_72"
-        small_sample = 2  # only process the first 2 files, todo: remove when actually running
+        search_string = "Baseline_smpl_pose_72"
         # get all txt file with search_string in the filename
         motion_smpl_files = [filename for filename in os.listdir(motion_smpl_folder) if filename.lower().endswith('.npy') and os.path.isfile(os.path.join(motion_smpl_folder, filename)) and search_string in filename]
 
@@ -328,6 +342,8 @@ if __name__ == '__main__':
             # motion_smpl_file = r'C:\Users\wenleyan1\Downloads\Baseline_smpl_pose_72.npy'
         for motion_i, motion_smpl_file in enumerate(motion_smpl_files):
             if motion_i > small_sample: break
+            real_index = motion_smpl_file.split('_')[-1].split('.')[0]
+            # if real_index not in select_motion_list: continue
             print(f'processing {motion_i}:{motion_smpl_file}...')
             with open(os.path.join(motion_smpl_folder, motion_smpl_file), 'rb') as f:
                 motion_smpl = np.load(f, allow_pickle=True)[None][0]
@@ -348,6 +364,6 @@ if __name__ == '__main__':
 
             last_frame_i = smpl_pose.export_3DSSPP_batch(loc_file=loc_file, concatenate=last_frame_i, task_name=motion_smpl_file)
             # smpl_pose.plot_vertices_frame(frame=0, plot_joints=True, render_mode='open3d')
-            # # smpl_pose.plot_vertices(foldername=f'{motion_smpl_folder}\smpl_pose_72_{motion_i}', make_gif=True, fps=30)
+            smpl_pose.plot_vertices(foldername=f'{motion_smpl_folder}\\Baseline_smpl_pose_72_{real_index}', make_gif=True, fps=30)
     # elif case == 2:  # get one individual result
 

@@ -26,6 +26,7 @@ class SSPPOutput:
         self.all_segments = {}
         self.segments = {}
         self.baseline_segments = {}
+        self.unique_task_len = 0
 
     def set_header(self, header):
         # modify header to make them unique
@@ -91,9 +92,10 @@ class SSPPOutput:
         self.segments = segments
         self.baseline_segments = baseline_segments
         self.all_segments = {**baseline_segments, **segments}
+        self.unique_task_len = unique_task_len
         return unique_task_names, unique_task_len
 
-    def eval_segment(self, segments, segment_eval_keys, verbose=False):
+    def eval_segment(self, segments, segment_eval_keys, verbose=False, criteria='min_mean'):
         """
         Perform evaluation on segments, such as calculating the mean, min, and max.
 
@@ -109,6 +111,7 @@ class SSPPOutput:
         segment_eval_keys = segment_eval_keys if isinstance(segment_eval_keys, list) else [segment_eval_keys]
         segments = segments if isinstance(segments, dict) else {"place_holder": segments}
         min_score_per_task = []
+        min_scores = []
         for _key, _value in segments.items():
             segment_min_list = []
             segment_mean_list = []
@@ -123,14 +126,22 @@ class SSPPOutput:
             segment_min_mean = np.mean(segment_min_list)
             segment_min_min = np.min(segment_min_list)
             segment_mean_min = np.min(segment_mean_list)
-            min_score_per_task.append(segment_mean_min)
+            if criteria == 'min_mean':
+                # select criteria: segment_mean_min
+                min_score_per_task.append(segment_mean_min)
+                min_scores.append(segment_mean_list)
+            elif criteria == 'min_min':
+                # select criteria: segment_min_min
+                min_score_per_task.append(segment_min_min)
+                min_scores.append(segment_min_list)
         task_id_w_max_score = np.argmax(min_score_per_task)
         task_w_max_score = list(segments.keys())[task_id_w_max_score]
-        return task_id_w_max_score, min_score_per_task[task_id_w_max_score], task_w_max_score
+        best_segment = {task_w_max_score: segments[task_w_max_score]}
+        return task_id_w_max_score, min_score_per_task[task_id_w_max_score], min_scores[task_id_w_max_score], task_w_max_score
 
     def visualize_segment(self, segments, segment_eval_keys, verbose=False):
         """
-        Visualize segment results
+        Visualize segment results, panda index is x-axis
 
         Parameters:
         segments (dict): A dictionary of segments. In this version, you should pass in self.all_segments for good visuals. todo: allow for part of segments
@@ -285,7 +296,7 @@ if __name__ == "__main__":
         input_3DSSPP_file = r"text2pose-20231113T194712Z-001\text2pose\A_person_squat_to_carry_up_something\3DSSPP-all-A_person_squat_to_carry_up_something-2_export.txt"
         result = SSPPV7Output()
         result.load_file(os.path.join(input_3DSSPP_folder, input_3DSSPP_file))
-        result.cut_segment()
+        _, unique_segment_len = result.cut_segment()
 
         eval_keys = result.show_category(subcategory='Strength Capability Percentile')[-6:-3]
         result.visualize_segment(result.all_segments, segment_eval_keys=eval_keys, verbose=True)

@@ -6,12 +6,13 @@ import numpy as np
 import torch
 from smplx.body_models import SMPL
 from matplotlib import pyplot as plt
+import shutil
 
 from SMPLPose import SMPLPose
 from SSPPOutput import SSPPV7Output
 
 
-def wait_for_file_update(output_file, initial_mtime):
+def wait_for_file_update(output_file, initial_mtime, wait_time=4):
     current_mtime = os.stat(output_file).st_mtime
     while True:
         time.sleep(1)  # Wait for a short period of time before checking again
@@ -20,7 +21,7 @@ def wait_for_file_update(output_file, initial_mtime):
                 if current_mtime != os.stat(output_file).st_mtime:
                     print(f"Waiting for the output file finish writing: {current_mtime} -> {os.stat(output_file).st_mtime}", end='\r')
                     current_mtime = os.stat(output_file).st_mtime
-                    time.sleep(4)
+                    time.sleep(wait_time)
                 else:
                     print("Finished writing the output file", end="\r")
                     time.sleep(2)
@@ -30,18 +31,17 @@ def wait_for_file_update(output_file, initial_mtime):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='SMPLPose')
-    parser.add_argument('--small_sample', type=int, default=3, help='only process the first n files for testing, set to a large number to process all')
-    parser.add_argument('--motion_smpl_base_dir', type=str, default=r'experiment\text2pose-20231113T194712Z-001\text2pose'
+    parser.add_argument('--small_sample', type=int, default=50, help='only process the first n files for testing, set to a large number to process all')
+    parser.add_argument('--motion_smpl_base_dir', type=str, default=r'experiment\text2pose\text2pose'
                         , help='motion smpl directory')
     parser.add_argument('--search_string', type=str, default='smpl_pose_72', help='search string for motion smpl files')
 
     ### text prompts ###
-    parser.add_argument('--text_prompt_idx', type=int, default=4, help='text prompt index')
-    text_prompts = ['A_person_half_kneel_with_one_leg_to_work_near_the_floor',
-                    'A_person_half_squat_to_work_near_the_floor',
-                    'A_person_move_a_box_from_left_to_right',
+    parser.add_argument('--text_prompt_idx', type=int, default=3, help='text prompt index')
+    text_prompts = ['A_standing_person_squat_down_to_work_on_something_near_the_floor',
                     'A_person_raise_both_hands_above_his_head_and_keep_them_there',
-                    'A_person_squat_to_carry_up_something']
+                    'A_person_squat_to_carry_up_something',
+                    'A_person_move_a_box_from_left_to_right']
     parser.add_argument('--text_prompts', type=list, default=text_prompts, help='text prompts')
     _args = parser.parse_args()
     _args.text_prompt = _args.text_prompts[_args.text_prompt_idx]
@@ -94,37 +94,46 @@ if __name__ == '__main__':
     wait_for_file_update(export_file, initial_mtime)  # Wait for the output file to be updated
     print(f"\n{'@' * 30} Subprocess end {'@' * 30}\n")
 
-    # save a copy of the output file
-    cp_export_file = loc_file.replace('.txt', '_export.txt')
-    os.system(f'copy {export_file} {cp_export_file}')
-
     ########################### Step 3: Analyze the output txt file ###########################
+    # some times need to re-run from this point if the output file is not complete
+    # save a copy of the output file
+    cp_export_file = loc_file.replace('.txt', '_export.txt')[3:]
+    shutil.copy(export_file, cp_export_file)
+
     # load file
+
     result = SSPPV7Output()
-    result.load_file(export_file)
-    result.cut_segment()
+    result.load_file(cp_export_file)
+    _, unique_segment_len = result.cut_segment()
+    print(f"Unique segment length: {unique_segment_len}")
 
     result.show_category(subcategory='Summary')
     result.show_category()
 
-    eval_keys = result.show_category(subcategory='Summary')[:-3]
-    result.visualize_segment(result.all_segments, segment_eval_keys=eval_keys, verbose=True)
-
+    # eval_keys = result.show_category(subcategory='Summary')[:-3]
     # eval_keys = result.show_category(subcategory='Strength Value')[-6:-3] + result.show_category(subcategory='Strength Capability Percentile')[-6:-3]
-    # result.visualize_segment(result.all_segments, segment_eval_keys=eval_keys, verbose=True)
-
     # eval_keys = result.show_category(subcategory='Strength Capability Percentile')[-6:-3]
-    # result.visualize_segment(result.all_segments, segment_eval_keys=eval_keys, verbose=True)
-    #
     # eval_keys = result.show_category(subcategory='Posture Angles')[-7:]
     # result.visualize_segment(result.all_segments, segment_eval_keys=eval_keys, verbose=True)
 
+    print()
+    print(f"Unique segment length: {unique_segment_len}")
+    print(f"{args.text_prompt_idx} text prompt: {args.text_prompt}")
     eval_keys = result.show_category(subcategory='Strength Capability Percentile')
+    criteria = ['min_min', 'min_mean']
+    criteria = ['min_min']
+    for crit in criteria:
+        ours = result.eval_segment(result.segments, eval_keys, verbose=False, criteria=crit)
+        result.eval_segment(result.segments[ours[-1]], eval_keys, verbose=False, criteria=crit)
+        baseline = result.eval_segment(result.baseline_segments, eval_keys, verbose=False, criteria=crit)
+        print(f"{'@' * 30} {crit} {'@' * 30}")
+        print(f"ours: {ours}")
+        min_idx = np.argmin(np.array(ours[-2]))
+        print(eval_keys[min_idx])
+        print(f"baseline: {baseline}")
+        min_idx = np.argmin(np.array(baseline[-2]))
+        print(eval_keys[min_idx])
+        print(ours[-2])
+        print(baseline[-2])
 
-    ours = result.eval_segment(result.segments, eval_keys)
-    result.eval_segment(result.segments[ours[-1]], eval_keys, verbose=True)
-    baseline = result.eval_segment(result.baseline_segments, eval_keys, verbose=True)
-    print("##################################################")
-    print(f"text prompt: {args.text_prompt}")
-    print(f"ours: {ours}")
-    print(f"baseline: {baseline}")
+
