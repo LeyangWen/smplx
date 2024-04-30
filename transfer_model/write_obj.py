@@ -32,10 +32,23 @@ def main(
     assert output_folder.exists()
 
     # open motion file
-    motion = np.load(motion_file, allow_pickle=True)
+    if motion_file.endswith(".npz"):
+        motion = np.load(motion_file, allow_pickle=True)
+    elif motion_file.endswith(".pkl"):  # output from moshpp
+        motion = np.load(motion_file, allow_pickle=True)
+        motion['poses'] = motion['fullpose']
+        motion['gender'] = np.array('male', dtype='<U4')
+        motion['marker_labels'] = np.array(motion['latent_labels'])
+    else:
+        raise ValueError("Unsupported file type")
+
     for k, v in motion.items():
         if type(v) is float:
             print(k, v)
+        elif type(v) is dict:
+            print(k, type(v))
+        elif type(v) is list:
+            print(k, len(v))
         else:
             print(k, v.shape)
 
@@ -71,6 +84,7 @@ def main(
     betas = betas.unsqueeze(0)[:, : model.num_betas]
     if "poses" in motion:
         poses = torch.tensor(motion["poses"]).float()
+        n = poses.shape[0]
     elif "smpl_poses" in motion:
         poses = motion["smpl_poses"]
         n = poses.shape[0]
@@ -84,6 +98,13 @@ def main(
         body_pose = poses[:, 3:66]
         left_hand_pose = poses[:, 66:111]
         right_hand_pose = poses[:, 111:156]
+    elif model_type == "smplx":
+        body_pose = poses[:, 3:66]
+        jaw_pose = poses[:, 66:69]
+        leye_pose = poses[:, 69:72]
+        reye_pose = poses[:, 72:75]
+        left_hand_pose = poses[:, 75:120]
+        right_hand_pose = poses[:, 120:]
     else:
         body_pose = poses[:, 3:]
         left_hand_pose = np.zeros((n, 3))

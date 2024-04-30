@@ -80,6 +80,9 @@ SMPL-* parameters are stored this code will differ. For the example AMASS data
 in this repository you can use the example code here:
 
 ```
+python write_obj.py --model-folder ../models/ --motion-file ../transfer_data/support_data/S05/Activity05_stageii.pkl --output-folder ../transfer_data/meshes/VEHS_test/ --model-type smplx
+
+
 python write_obj.py --model-folder ../models/ --motion-file ../transfer_data/support_data/github_data/amass_sample.npz --output-folder ../transfer_data/meshes/amass_sample/
 ```
 
