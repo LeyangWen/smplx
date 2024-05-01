@@ -8,10 +8,10 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=20g
 #SBATCH --gres=gpu:1
-#SBATCH --time=24:00:00
+#SBATCH --time=02:00:00
 #SBATCH --account=shdpm0
 #SBATCH --partition=spgpu
-#SBATCH --array=1-2
+#SBATCH --array=1-1
 
 ##### END preamble
 
@@ -28,12 +28,9 @@ module load eigen tbb
 module load blender
 module list
 
-mkdir output_slurm
-
 slurm_name=$SLURM_JOB_NAME
 slurm_task_id=$SLURM_ARRAY_TASK_ID
 
-python -m -u transfer_model \
---exp-cfg config_files/smplx2smpl_as.yaml \
-> "output_slurm/transfer-model_output.out"
+python -m transfer_model \
+--exp-cfg config_files/smplx2smpl.yaml
 

@@ -36,9 +36,9 @@ slurm_task_id=$SLURM_ARRAY_TASK_ID
 cd transfer_model
 python -u write_obj.py \
 --model-folder ../models/ \
---motion-file /nfs/turbo/coe-shdpm/leyang/VEHS-7M/SMPLX/SOMA_pkl/ \
---output-folder /nfs/turbo/coe-shdpm/leyang/VEHS-7M/SMPLX/SMPLX_obj/ \
+--motion-file /nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SOMA_SMPLX_pkl/ \
+--output-folder /nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPLX_obj/ \
 --model-type smplx \
 --batch-moshpp \
---batch-id slurm_taslk_id > "output_slurm/write_obj_output.out"
+--batch-id slurm_task_id
 
