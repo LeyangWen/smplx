@@ -2,6 +2,7 @@ datasets:
     mesh_folder:
         data_folder: 'transfer_data/meshes/VEHS_test'
 deformation_transfer_path: 'transfer_data/smplx2smpl_deftrafo_setup.pkl'
+output_folder: 'transfer_data/output/VEHS_test'
 mask_ids_fname: ''
 summary_steps: 100
 
