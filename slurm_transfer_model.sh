@@ -32,5 +32,6 @@ slurm_name=$SLURM_JOB_NAME
 slurm_task_id=$SLURM_ARRAY_TASK_ID
 
 python -m transfer_model \
---exp-cfg config_files/smplx2smpl.yaml
+--exp-cfg config_files/smplx2smpl.yaml \
+
 

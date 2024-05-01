@@ -40,6 +40,22 @@ def parse_args(argv=None) -> OmegaConf:
                         nargs='*',
                         help='Command line arguments')
 
+    parser.add_argument(
+        "--batch-moshpp",
+        action="store_true",
+        help="Batch process moshpp output, will use args.motion-file as a directory",
+    )
+    parser.add_argument(
+        "--batch-id",
+        type=int,
+    )
+    parser.add_argument(
+        "--overwrite-input-obj-folder", type=str, help="The path to the moshpp_batch input folder"
+    )
+    parser.add_argument(
+        "--overwrite-output-folder", type=str, help="The path to the moshpp_batch output folder"
+    )
+
     cmd_args = parser.parse_args()
 
     cfg = default_conf.copy()
@@ -47,5 +63,6 @@ def parse_args(argv=None) -> OmegaConf:
         cfg.merge_with(OmegaConf.load(cmd_args.exp_cfg))
     if cmd_args.exp_opts:
         cfg.merge_with(OmegaConf.from_cli(cmd_args.exp_opts))
+
 
     return cfg

@@ -231,11 +231,10 @@ if __name__ == "__main__":
 
     if args.batch_moshpp:
         for root, dirs, files in os.walk(motion_file):
-            dirs.sort()  # Sort directories in-place
             files.sort(key=str.lower)  # Sort files in-place
             for file in files:
                 if file.endswith('.pkl') and 'stageii' in file:
-                    if args.batch_id is not None and args.batch_id != int(dirs[-2:]):  # "S01"  --> "01" --> 1
+                    if args.batch_id is not None and args.batch_id != int(root[-2:]):  # "S01"  --> "01" --> 1
                         continue
                         print(f"Processing {args.batch_id}")
 

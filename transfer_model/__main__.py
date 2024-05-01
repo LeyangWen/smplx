@@ -24,6 +24,7 @@ import open3d as o3d
 import torch
 from loguru import logger
 from tqdm import tqdm
+import wandb
 
 from smplx import build_layer
 
@@ -33,8 +34,8 @@ from .transfer_model import run_fitting
 from .utils import read_deformation_transfer, np_mesh_to_o3d
 
 
-def main() -> None:
-    exp_cfg = parse_args()
+def main(exp_cfg) -> None:
+
 
     if torch.cuda.is_available() and exp_cfg["use_cuda"]:
         device = torch.device('cuda')
@@ -102,4 +103,24 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    args = parse_args()
+
+    if args.batch_moshpp:
+        wandb.init(project="smplx-T2M-GPT")
+
+        for root, dirs, files in os.walk(args.overwrite_input_obj_folder):
+            if not root[-7:] == "stageii":
+                continue
+            activity_name = root.split('/')[-1]  # "Activity00_stageii"
+            subject_name = root.split('/')[-2]  # "S01"
+            subject_idx = int(subject_name[-2:])  # ".../SMPLX_obj/S01/Activity00_stageii/" --> "S01"  --> "01" --> 1
+            if args.batch_id is not None and args.batch_id != subject_idx:
+                continue
+            print(f"Processing {args.batch_id} - {root}")
+
+            args.datasets.mesh_folder.data_folder = root
+            args.output_folder = os.path.join(args.overwrite_output_folder, subject_name, activity_name)
+            print(f"Output folder: {args.output_folder}")
+            main(args)
+    else:
+        main(args)
