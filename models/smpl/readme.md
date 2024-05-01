@@ -1,0 +1,1 @@
+Downloaded smpl files and renamed to SMPL_FEMALE.pkl

@@ -30,7 +30,7 @@ IGNORED_KEYS = [
 ]
 
 def aggregate_rotmats(x):
-    x = torch.cat(x, dim=0).detach().numpy()
+    x = torch.cat(x, dim=0).detach().cpu().numpy()
     s = x.shape[:-2]
     x = R.from_matrix(x.reshape(-1, 3, 3)).as_rotvec()
     x = x.reshape(s[0], -1)
