@@ -236,7 +236,9 @@ if __name__ == "__main__":
                 if file.endswith('.pkl') and 'stageii' in file:
                     if args.batch_id is not None and args.batch_id != int(dirs[-2:]):  # "S01"  --> "01" --> 1
                         continue
-                    print(f"Processing {args.batch_id}")
+                        print(f"Processing {args.batch_id}")
+
+                    # Determine gender from mosh output
                     female_dir = os.path.join(root, "female_stagei.json")
                     male_dir = os.path.join(root, "male_stagei.json")
                     if os.path.exists(female_dir):
@@ -246,9 +248,11 @@ if __name__ == "__main__":
                     else:
                         print("*"*20, "Warning: No gender files detected", "*"*20)
                         gender = "neutral"
+                    print(f"Setting gender to: {gender}")
+
 
                     input_file = os.path.join(root, file)
-                    output_folder = os.path.join(output_folder, dirs, file.split('.')[0])
+                    output_folder = os.path.join(output_folder, root.split('/')[-1], file.split('.')[0])
 
                     print(f"Processing {input_file}...")
                     print(f"Output folder: {output_folder}")
