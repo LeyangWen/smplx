@@ -139,7 +139,7 @@ def main(
             vertices, model.faces, vertex_colors=vertex_colors, process=False
         )
 
-        output_path = output_folder / "{0:04d}.obj".format(pose_idx[0])
+        output_path = output_folder / "{0:07d}.obj".format(pose_idx[0])
         tri_mesh.export(str(output_path))
 
         if pose_idx[0] == 0 and verbose:
