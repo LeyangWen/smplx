@@ -141,7 +141,7 @@ def main(
         output_path = output_folder / "{0:04d}.obj".format(pose_idx[0])
         tri_mesh.export(str(output_path))
 
-        if pose_idx[0] == 0 and args.verbose:
+        if pose_idx[0] == 0 and verbose:
             import pyrender
             print("displaying first pose, exit window to continue processing")
             mesh = pyrender.Mesh.from_trimesh(tri_mesh)
