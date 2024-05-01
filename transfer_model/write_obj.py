@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 import torch
 
-import pyrender
+
 import trimesh
 
 import smplx
@@ -142,6 +142,7 @@ def main(
         tri_mesh.export(str(output_path))
 
         if pose_idx[0] == 0 and args.verbose:
+            import pyrender
             print("displaying first pose, exit window to continue processing")
             mesh = pyrender.Mesh.from_trimesh(tri_mesh)
 
@@ -233,10 +234,9 @@ if __name__ == "__main__":
             files.sort(key=str.lower)  # Sort files in-place
             for file in files:
                 if file.endswith('.pkl') and 'stageii' in file:
-                    if args.batch_id is not None:
-                        if args.batch_id != int(dirs[-2:]):  # "S01"  --> "01" --> 1
-                            continue
-                        print(f"Processing {args.batch_id}")
+                    if args.batch_id is not None and args.batch_id != int(dirs[-2:]):  # "S01"  --> "01" --> 1
+                        continue
+                    print(f"Processing {args.batch_id}")
                     female_dir = os.path.join(root, "female_stagei.json")
                     male_dir = os.path.join(root, "male_stagei.json")
                     if os.path.exists(female_dir):

@@ -108,7 +108,7 @@ Problems are also discussed in
 
 
 ## My debug note:
-
+- [x] Env setup, I just build upon the soma env
 - [x] Step 1, working
 - [x] Step 2, working
   - [ ] `vertices_frame` need to convert to `vertices` in multiple places, it was updated in the upstream SMPLX repo but not here for some reason. I have fixed those that are throwing errors but not all. 
