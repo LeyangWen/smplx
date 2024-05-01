@@ -40,5 +40,5 @@ python -u write_obj.py \
 --output-folder /nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPLX_obj/ \
 --model-type smplx \
 --batch-moshpp \
---batch-id slurm_task_id
+--batch-id $slurm_task_id
 

@@ -8,7 +8,7 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=20g
 #SBATCH --gres=gpu:1
-#SBATCH --time=02:00:00
+#SBATCH --time=01:00:00
 #SBATCH --account=shdpm0
 #SBATCH --partition=spgpu
 #SBATCH --array=1-1
@@ -33,5 +33,8 @@ slurm_task_id=$SLURM_ARRAY_TASK_ID
 
 python -m transfer_model \
 --exp-cfg config_files/smplx2smpl.yaml \
-
+--batch-moshpp \
+--batch-id $slurm_task_id \
+--overwrite-input-obj-folder /nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPLX_obj/ \
+--overwrite-output-folder /nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPL_obj_pkl/ \
 
