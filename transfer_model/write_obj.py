@@ -43,15 +43,16 @@ def main(
     else:
         raise ValueError("Unsupported file type")
 
-    for k, v in motion.items():
-        if type(v) is float:
-            print(k, v)
-        elif type(v) is dict:
-            print(k, type(v))
-        elif type(v) is list:
-            print(k, len(v))
-        else:
-            print(k, v.shape)
+    if verbose:
+        for k, v in motion.items():
+            if type(v) is float:
+                print(k, v)
+            elif type(v) is dict:
+                print(k, type(v))
+            elif type(v) is list:
+                print(k, len(v))
+            else:
+                print(k, v.shape)
 
     if "betas" in motion:
         betas = motion["betas"]
