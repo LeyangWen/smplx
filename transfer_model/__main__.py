@@ -44,7 +44,7 @@ def main() -> None:
             if input("use_cuda=True and GPU is not available, using CPU instead,"
                      " would you like to continue? (y/n)") != "y":
                 sys.exit(3)
-    print("*" * 20, "device", device, "*" * 20)
+    print("*" * 20, "device:", device, "*" * 20)
 
     logger.remove()
     logger.add(
