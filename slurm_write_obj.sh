@@ -11,7 +11,7 @@
 ##SBATCH --partition=debug
 #SBATCH --time=06:00:00
 #SBATCH --account=shdpm0
-#SBATCH --array=1-10
+#SBATCH --array=1-1
 
 ##### END preamble
 
@@ -28,7 +28,7 @@ module load eigen tbb
 module load blender
 module list
 
-mkdir output_slurm
+# mkdir output_slurm
 
 slurm_name=$SLURM_JOB_NAME
 slurm_task_id=$SLURM_ARRAY_TASK_ID
