@@ -36,8 +36,8 @@ slurm_tasl_id=$SLURM_ARRAY_TASK_ID
 cd transfer_model
 python -u write_obj.py \
 --model-folder ../models/ \
---motion-file ../transfer_data/support_data/S05/Activity04_stageii.pkl \
---output-folder ../transfer_data/meshes/VEHS_test/ \
+--motion-file ./nfs/turbo/coe-shdpm/leyang/VEHS-7M/SMPLX/SOMA_pkl/ \
+--output-folder /nfs/turbo/coe-shdpm/leyang/VEHS-7M/SMPLX/SMPLX_obj/ \
 --model-type smplx \
 --batch-moshpp > "output_slurm/write_obj_output.out"
 
