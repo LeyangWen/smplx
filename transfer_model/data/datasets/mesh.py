@@ -64,7 +64,7 @@ class MeshFolder(Dataset):
         mesh = trimesh.load(mesh_path, process=False)
 
         return {
-            'vertices': np.asarray(mesh.vertices_frame, dtype=np.float32),
+            'vertices': np.asarray(mesh.vertices, dtype=np.float32),
             'faces': np.asarray(mesh.faces, dtype=np.int32),
             'indices': index,
             'paths': mesh_path,

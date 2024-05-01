@@ -29,6 +29,6 @@ def np_mesh_to_o3d(vertices, faces):
     if torch.is_tensor(faces):
         faces = faces.detach().cpu().numpy()
     mesh = Mesh()
-    mesh.vertices_frame = Vector3d(vertices)
+    mesh.vertices = Vector3d(vertices)
     mesh.triangles = Vector3i(faces)
     return mesh
