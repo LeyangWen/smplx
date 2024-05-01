@@ -25,6 +25,7 @@ import torch
 from loguru import logger
 from tqdm import tqdm
 import wandb
+import time
 
 from smplx import build_layer
 
@@ -86,10 +87,10 @@ def main(exp_cfg) -> None:
         var_dict = run_fitting(
             exp_cfg, batch, body_model, def_matrix, mask_ids)
         paths = batch['paths']
+        wandb.log({'frames': ii})
 
         for ii, path in enumerate(paths):
             _, fname = osp.split(path)
-
             output_path = osp.join(
                 output_folder, f'{osp.splitext(fname)[0]}.pkl')
             with open(output_path, 'wb') as f:
@@ -103,11 +104,12 @@ def main(exp_cfg) -> None:
 
 
 if __name__ == '__main__':
-    args = parse_args()
+    exp_cfg, args = parse_args()
+    wandb.init(project=args.wandb_project, name=args.wandb_name, config=args)  # Initialize a new run
+    start_time = time.time()
+    current_time = time.time()
 
     if args.batch_moshpp:
-        wandb.init(project="smplx-T2M-GPT")
-
         for root, dirs, files in os.walk(args.overwrite_input_obj_folder):
             if not root[-7:] == "stageii":
                 continue
@@ -118,9 +120,18 @@ if __name__ == '__main__':
                 continue
             print(f"Processing {args.batch_id} - {root}")
 
-            args.datasets.mesh_folder.data_folder = root
-            args.output_folder = os.path.join(args.overwrite_output_folder, subject_name, activity_name)
-            print(f"Output folder: {args.output_folder}")
-            main(args)
+            exp_cfg.datasets.mesh_folder.data_folder = root
+            exp_cfg.output_folder = os.path.join(args.overwrite_output_folder, subject_name, activity_name)
+            print(f"Output folder: {exp_cfg.output_folder}")
+            main(exp_cfg)
+
+            print("#"*20, f"Finished processing {args.batch_id} - {root}", "#"*20)
+            iteration_time = time.time() - current_time
+            culmulative_time = time.time() - start_time
+            current_time = time.time()
+            wandb.log({'subject_idx': subject_idx, 'iteration_time': iteration_time, 'culmulative_time': culmulative_time})
+
     else:
-        main(args)
+        main(exp_cfg)
+    wandb.finish()
+

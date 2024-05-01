@@ -55,6 +55,8 @@ def parse_args(argv=None) -> OmegaConf:
     parser.add_argument(
         "--overwrite-output-folder", type=str, help="The path to the moshpp_batch output folder"
     )
+    parser.add_argument('--wandb_project', default='smpl-smplx', help='wandb project name')
+    parser.add_argument('--wandb_name', default='test', help='wandb run name')
 
     cmd_args = parser.parse_args()
 
@@ -63,6 +65,4 @@ def parse_args(argv=None) -> OmegaConf:
         cfg.merge_with(OmegaConf.load(cmd_args.exp_cfg))
     if cmd_args.exp_opts:
         cfg.merge_with(OmegaConf.from_cli(cmd_args.exp_opts))
-
-
-    return cfg
+    return cfg, cmd_args  # exp_cfg, personal args

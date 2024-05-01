@@ -161,7 +161,7 @@ cd transfer_model
 python write_obj.py --model-folder ../models/ --motion-file ../transfer_data/support_data/S05/Activity04_stageii.pkl --output-folder ../transfer_data/meshes/VEHS_test/ --model-type smplx --batch-moshpp
 
 cd ..
-python -m transfer_model  --exp-cfg config_files/smplx2smpl.yaml
+python -m transfer_model  --exp-cfg config_files/smplx2smpl.yaml --batch-moshpp
 
 cd transfer_model
 python merge_output.py --gender neutral ../output
