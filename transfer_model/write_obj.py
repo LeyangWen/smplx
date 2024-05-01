@@ -250,12 +250,13 @@ if __name__ == "__main__":
                         gender = "neutral"
                     print(f"Setting gender to: {gender}")
 
-
                     input_file = os.path.join(root, file)
                     output_folder = os.path.join(output_folder, root.split('/')[-1], file.split('.')[0])
-
                     print(f"Processing {input_file}...")
                     print(f"Output folder: {output_folder}")
+                    if not os.path.exists(output_folder):
+                        os.makedirs(output_folder)
+
                     main(
                         model_folder,
                         input_file,
