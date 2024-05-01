@@ -223,7 +223,7 @@ if __name__ == "__main__":
 
     model_folder = resolve(args.model_folder)
     motion_file = resolve(args.motion_file)
-    output_folder = resolve(args.output_folder)
+    args.output_folder = resolve(args.output_folder)
     model_type = args.model_type
     ext = args.ext
     num_expression_coeffs = args.num_expression_coeffs
@@ -251,7 +251,7 @@ if __name__ == "__main__":
                     print(f"Setting gender to: {gender}")
 
                     input_file = os.path.join(root, file)
-                    output_folder = os.path.join(output_folder, root.split('/')[-1], file.split('.')[0])
+                    output_folder = os.path.join(args.output_folder, root.split('/')[-1], file.split('.')[0])
                     print(f"Processing {input_file}...")
                     print(f"Output folder: {output_folder}")
                     if not os.path.exists(output_folder):
