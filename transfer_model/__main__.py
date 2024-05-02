@@ -134,7 +134,7 @@ if __name__ == '__main__':
                 exp_cfg.body_model.gender = "neutral"
             print(f"Subject: {subject_name} is {exp_cfg.body_model.gender}")
             print(f"Output folder: {exp_cfg.output_folder}")
-            # main(exp_cfg)
+            main(exp_cfg)
 
             print("#"*20, f"Finished processing {args.batch_id} - {root}", "#"*20)
             iteration_time = time.time() - current_time

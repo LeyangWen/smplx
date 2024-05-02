@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=smplx-transfer-model
+#SBATCH --job-name=transfer-model
 #SBATCH --output=output_slurm/transfer-model_log.txt
 #SBATCH --error=output_slurm/transfer-model_error.txt
 #SBATCH --mail-type=BEGIN,END,FAIL
@@ -8,7 +8,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=10g
 #SBATCH --gres=gpu:1
-#SBATCH --time=1:00:00
+#SBATCH --time=30:00:00
 #SBATCH --account=shdpm0
 #SBATCH --partition=spgpu
 #SBATCH --array=1-10
@@ -37,5 +37,5 @@ python -m transfer_model \
 --batch-id $slurm_task_id \
 --overwrite-input-obj-folder /nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPLX_obj/ \
 --overwrite-output-folder /nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPL_obj_pkl/ \
---wandb-name slurm_run \
+--wandb-name "$slurm_name$slurm_task_id" \
 
