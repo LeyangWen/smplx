@@ -170,7 +170,9 @@ fast/added issue parameter:
   - batch_size = 8, num_workers=16 --> 10/423 [16:52<10:57:32, 95.53s/it]
   - batch_size = 32, num_workers=16, downsample 5 --> 5/22 [23:10<1:18:47, 278.10s/it]
     - 23/60/795*22000*9/24 --> 3.97 days per subject
-
+- running on slurm
+  - batch_size = 32, num_workers=16, downsample 5 --> 7/31 [17:56<1:00:14, 150.59s/it]59<00:07,  8.64it/s]
+    - 1/4475*22000*9/24 --> 1.8 days per subject
 ### Full workflow
 
 ```bash
