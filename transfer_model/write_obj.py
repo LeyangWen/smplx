@@ -236,7 +236,13 @@ if __name__ == "__main__":
                 if file.endswith('.pkl') and 'stageii' in file:
                     if args.batch_id is not None and args.batch_id != int(root[-2:]):  # "S01"  --> "01" --> 1
                         continue
-                        print(f"Processing {args.batch_id}")
+                    # ignore_list = ["00", "01"]
+                    # ignore_countinue = False
+                    # for ignore_term in ignore_list:
+                    #     if ignore_term in root:
+                    #         ignore_countinue = True
+                    # if ignore_countinue:
+                    #     continue
 
                     # Determine gender from mosh output
                     female_dir = os.path.join(root, "female_stagei.json")

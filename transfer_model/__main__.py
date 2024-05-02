@@ -80,6 +80,7 @@ def main(exp_cfg) -> None:
 
     dataloader = data_obj_dict['dataloader']
 
+    subject_start_time = time.time()
     for ii, batch in enumerate(tqdm(dataloader)):
         for key in batch:
             if torch.is_tensor(batch[key]):
@@ -87,7 +88,8 @@ def main(exp_cfg) -> None:
         var_dict = run_fitting(
             exp_cfg, batch, body_model, def_matrix, mask_ids)
         paths = batch['paths']
-        wandb.log({'frames': ii})
+        subject_cumulative_time = time.time() - subject_start_time
+        wandb.log({'frames': ii, 'subject_cumulative_time_hr': subject_cumulative_time/3600})
 
         for ii, path in enumerate(paths):
             _, fname = osp.split(path)

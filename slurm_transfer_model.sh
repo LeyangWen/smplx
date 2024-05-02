@@ -5,8 +5,8 @@
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=20g
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=10g
 #SBATCH --gres=gpu:1
 #SBATCH --time=1:00:00
 #SBATCH --account=shdpm0
