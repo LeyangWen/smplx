@@ -111,6 +111,8 @@ if __name__ == '__main__':
     start_time = time.time()
     current_time = time.time()
 
+    male_subject_list = ['S01', 'S02', 'S04', 'S07', 'S08']
+    female_subject_list = ['S03', 'S05', 'S06', 'S09', 'S10']
     if args.batch_moshpp:
         for root, dirs, files in os.walk(args.overwrite_input_obj_folder):
             if not root[-7:] == "stageii":
@@ -124,6 +126,13 @@ if __name__ == '__main__':
 
             exp_cfg.datasets.mesh_folder.data_folder = root
             exp_cfg.output_folder = os.path.join(args.overwrite_output_folder, subject_name, activity_name)
+            if subject_name in male_subject_list:
+                exp_cfg.body_model.gender = "male"
+            elif subject_name in female_subject_list:
+                exp_cfg.body_model.gender = "female"
+            else:
+                exp_cfg.body_model.gender = "neutral"
+            print(f"Subject: {subject_name} is {exp_cfg.body_model.gender}")
             print(f"Output folder: {exp_cfg.output_folder}")
             main(exp_cfg)
 
