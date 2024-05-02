@@ -164,8 +164,12 @@ fast/added issue parameter:
 -0.910 +/- 0.490
 1.661 +/- 0.297
 ```
-
-
+- running on local GPU, 
+  - batch_size = 1, num_workers=0 --> 20/3381 [06:42<18:48:27, 20.15s/it]
+  - batch_size = 8, num_workers=0 --> 5/423 [09:03<12:20:24, 106.28s/it]
+  - batch_size = 8, num_workers=16 --> 10/423 [16:52<10:57:32, 95.53s/it]
+  - batch_size = 32, num_workers=16, downsample 5 --> 5/22 [23:10<1:18:47, 278.10s/it]
+    - 23/60/795*22000*9/24 --> 3.97 days per subject
 
 ### Full workflow
 
@@ -174,7 +178,7 @@ cd transfer_model
 python write_obj.py --model-folder ../models/ --motion-file ../transfer_data/support_data/S05/Activity04_stageii.pkl --output-folder ../transfer_data/meshes/VEHS_test/ --model-type smplx --batch-moshpp
 
 cd ..
-python -m transfer_model  --exp-cfg config_files/smplx2smpl.yaml --batch-moshpp
+python -m transfer_model  --exp-cfg config_files/smplx2smpl.yaml
 
 cd transfer_model
 python merge_output.py --gender neutral ../output

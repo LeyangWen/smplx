@@ -1,10 +1,12 @@
 datasets:
+    num_workers: 16
     mesh_folder:
         data_folder: 'transfer_data/meshes/VEHS_test'
 deformation_transfer_path: 'transfer_data/smplx2smpl_deftrafo_setup.pkl'
 output_folder: 'transfer_data/output/VEHS_test'
 mask_ids_fname: ''
 summary_steps: 100
+batch_size: 128
 
 edge_fitting:
     per_part: False

@@ -34,7 +34,8 @@ class MeshFolder(Dataset):
         self,
         data_folder: str,
         transforms=None,
-        exts: Optional[Tuple] = None
+        exts: Optional[Tuple] = None,
+        downsample=5
     ) -> None:
         ''' Dataset similar to ImageFolder that reads meshes with the same
             topology
@@ -47,11 +48,13 @@ class MeshFolder(Dataset):
         logger.info(
             f'Building mesh folder dataset for folder: {self.data_folder}')
 
-        self.data_paths = np.array([
+        data_paths = np.array([
             osp.join(self.data_folder, fname)
             for fname in os.listdir(self.data_folder)
             if any(fname.endswith(ext) for ext in exts)
         ])
+        data_paths.sort()
+        self.data_paths = data_paths[::downsample]
         self.num_items = len(self.data_paths)
 
     def __len__(self) -> int:

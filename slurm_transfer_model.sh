@@ -37,4 +37,5 @@ python -m transfer_model \
 --batch-id $slurm_task_id \
 --overwrite-input-obj-folder /nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPLX_obj/ \
 --overwrite-output-folder /nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPL_obj_pkl/ \
+--wandb-name slurm_speed_test \
 
