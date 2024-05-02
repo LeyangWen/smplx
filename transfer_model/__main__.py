@@ -89,7 +89,7 @@ def main(exp_cfg) -> None:
             exp_cfg, batch, body_model, def_matrix, mask_ids)
         paths = batch['paths']
         subject_cumulative_time = time.time() - subject_start_time
-        wandb.log({'frames': ii, 'subject_cumulative_time_hr': subject_cumulative_time/3600})
+        wandb.log({'frames': exp_cfg.batch_size*ii, 'batch': ii, 'subject_cumulative_time_hr': subject_cumulative_time/3600})
 
         for ii, path in enumerate(paths):
             _, fname = osp.split(path)

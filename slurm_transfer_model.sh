@@ -11,7 +11,7 @@
 #SBATCH --time=1:00:00
 #SBATCH --account=shdpm0
 #SBATCH --partition=spgpu
-#SBATCH --array=1-1
+#SBATCH --array=1-10
 
 ##### END preamble
 
@@ -37,5 +37,5 @@ python -m transfer_model \
 --batch-id $slurm_task_id \
 --overwrite-input-obj-folder /nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPLX_obj/ \
 --overwrite-output-folder /nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPL_obj_pkl/ \
---wandb-name slurm_speed_test \
+--wandb-name slurm_run \
 
