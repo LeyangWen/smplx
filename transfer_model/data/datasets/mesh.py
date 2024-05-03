@@ -54,7 +54,9 @@ class MeshFolder(Dataset):
             if any(fname.endswith(ext) for ext in exts)
         ])
         data_paths.sort()
-        self.data_paths = data_paths[::downsample]
+        downsample_paths = data_paths[::downsample]
+        excluded_paths = np.array([path for i, path in enumerate(data_paths) if i % downsample != 0])
+        self.data_paths = excluded_paths
         self.num_items = len(self.data_paths)
 
     def __len__(self) -> int:

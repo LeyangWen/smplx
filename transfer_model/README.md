@@ -121,15 +121,14 @@ Problems are also discussed in
       - [x] Testing blender visualization, exactly the same with SMPLX and SMPL-slow
       - [x] Testing beta similarity, still okayish
       - [x] Moving forward with the new parameter
-    - [x] Tested Slurm speed, rough estimate take 5 hours each for 10 subjects, can run parrell, pretty fast, no need to downsample or the other hacky method 
+      - [x] Also increasing batch size to 128 dramatically speed up the process 
+    - [x] Tested Slurm speed, downsample 5 --> 9 hours each for 10 subjects, can run parrell, pretty fast
+    - [ ] Full will take 9*5 = 45 hours, 1.8 days per subject. If no redundanct calculation, it will be 9*4 = 36 hours, 1.5 days per subject
+    - [ ] First back up
   - [ ] If slurm time is unreasonable, get beta for each subject, then find a way to convert SMPLX-pose to SMPL-pose, the body pose (3:66) should be similar, only that SMPL have an extra r and l hand pose, which need to find from SMPLX-handpose
     - [ ] First, see the pkl file for smplx and smpl on the same frame, confirm 3:66 is the same
     - [ ] Also confirm :3 is the same, because, why not, just assert similar
     - [ ] Then, look for the hand pose
-
-
-
-
 - [ ] Step 3
   - [ ] Merge output now returning `torch.cat(): expected a non-empty list of Tensors`, it might be due to early stopping on the conversion step
 - [ ] Rotate based on camera parameters
