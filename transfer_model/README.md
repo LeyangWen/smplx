@@ -130,7 +130,9 @@ Problems are also discussed in
     - [ ] Also confirm :3 is the same, because, why not, just assert similar
     - [ ] Then, look for the hand pose
 - [ ] Step 3
+  - [ ] Need GPU
   - [ ] Merge output now returning `torch.cat(): expected a non-empty list of Tensors`, it might be due to early stopping on the conversion step
+  - [ ] High beta errors
 - [ ] Rotate based on camera parameters
 - [ ] Format to MotionBert format
 
@@ -182,7 +184,7 @@ cd ..
 python -m transfer_model  --exp-cfg config_files/smplx2smpl.yaml
 
 cd transfer_model
-python merge_output.py --gender neutral ../output
+python merge_output.py --gender neutral ../transfer_data/output/VEHS_test/
 ```
 
 
