@@ -6,7 +6,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=2
-#SBATCH --mem=20g
+#SBATCH --mem=50g
 #SBATCH --gres=gpu:1
 #SBATCH --time=2:00:00
 #SBATCH --account=shdpm0
