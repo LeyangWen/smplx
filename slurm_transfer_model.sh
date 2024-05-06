@@ -11,7 +11,7 @@
 #SBATCH --time=40:00:00
 #SBATCH --account=shdpm0
 #SBATCH --partition=spgpu
-#SBATCH --array=1-10
+#SBATCH --array=1-3
 
 ##### END preamble
 
@@ -36,6 +36,6 @@ python -m transfer_model \
 --batch-moshpp \
 --batch-id $slurm_task_id \
 --overwrite-input-obj-folder /nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPLX_obj/ \
---overwrite-output-folder /nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPL_obj_pkl/ \
+--overwrite-output-folder /scratch/shdpm_root/shdpm0/wenleyan/20240505_full_smpl/ \
 --wandb-name "$slurm_name$slurm_task_id" \
 
