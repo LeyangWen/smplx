@@ -390,6 +390,7 @@ def run_fitting(
 
     body_model_output = body_model(
         return_full_pose=True, get_skin=True, **param_dict)
+    body_model_output.transl = var_dict['transl']  # or else will output transl = None # https://github.com/vchoutas/smplx/issues/168
     var_dict.update(body_model_output)
     var_dict['faces'] = body_model.faces
 

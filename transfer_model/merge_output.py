@@ -21,9 +21,22 @@ KEYS = [
 "full_pose",
 "v_shaped",
 "faces"
-]
+]  # SMPLX keys
+
+KEYS = ['transl',
+        'global_orient',
+        'body_pose',
+        'betas',
+        'vertices',
+        'joints',
+        'full_pose',
+        'v_shaped',
+        'faces'
+         ]  # SMPL keys
+
 
 IGNORED_KEYS = [
+'transl',  # bug in transfer model set this to none, temporary fix
 "vertices",
 "faces",
 "v_shaped"
@@ -36,8 +49,8 @@ def aggregate_rotmats(x):
     x = x.reshape(s[0], -1)
     return x
 
-aggregate_function = {k: lambda x: torch.cat(x, 0).detach().numpy() for k in KEYS}
-aggregate_function["betas"] = lambda x: torch.cat(x, 0).mean(0).detach().numpy()
+aggregate_function = {k: lambda x: torch.cat(x, 0).detach().cpu().numpy() for k in KEYS}
+aggregate_function["betas"] = lambda x: torch.cat(x, 0).mean(0).detach().cpu().numpy()
 
 for k in ["global_orient", "body_pose", "left_hand_pose", "right_hand_pose", "jaw_pose", "full_pose"]:
     aggregate_function[k] = aggregate_rotmats
