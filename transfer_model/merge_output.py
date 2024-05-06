@@ -4,6 +4,8 @@ import torch
 from pathlib import Path
 import pickle
 from scipy.spatial.transform import Rotation as R
+import wandb
+import time
 
 KEYS = [
 "transl",
@@ -70,7 +72,9 @@ def merge(output_dir, gender):
     keys = set(KEYS) - set(IGNORED_KEYS)
     for k in keys:
         merged[k] = []
+    start_time = time.time()
     for pkl_file in pkl_files:
+        wandb.log({"time": time.time() - start_time})
         with open(pkl_file, "rb") as f:
             data = pickle.load(f)
         for k in keys:
@@ -97,5 +101,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Merge output of transfer_model script')
     parser.add_argument('output_dir', type=str, help='output directory of transfer_model script')
     parser.add_argument('--gender', type=str, choices=['male', 'female', 'neutral'], help='gender of actor in motion sequence')
+    parser.add_argument('--wandb-project', default='smpl-smplx', help='wandb project name')
+    parser.add_argument('--wandb-name', default='test-merge', help='wandb run name')
+
     args = parser.parse_args()
+    wandb.init(project=args.wandb_project, name=args.wandb_name, config=args)  # Initialize a new run
     merge(args.output_dir, args.gender)
+    wandb.finish()

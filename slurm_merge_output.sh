@@ -6,7 +6,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=2
-#SBATCH --mem=20g
+#SBATCH --mem=50g
 #SBATCH --gres=gpu:1
 #SBATCH --time=2:00:00
 #SBATCH --account=shdpm0
@@ -32,6 +32,6 @@ cd transfer_model
 
 python -u merge_output.py \
 --gender male \
-/nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPL_obj_pkl/S01/Activity00_stageii/ > output_slurm/merge_out.txt
+/nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPL_obj_pkl/S01/Activity00_stageii/
 
 
