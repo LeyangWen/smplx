@@ -123,15 +123,17 @@ Problems are also discussed in
       - [x] Moving forward with the new parameter
       - [x] Also increasing batch size to 128 dramatically speed up the process 
     - [x] Tested Slurm speed, downsample 5 --> 9 hours each for 10 subjects, can run parrell, pretty fast
-    - [ ] Full will take 9*5 = 45 hours, 1.8 days per subject. If no redundanct calculation, it will be 9*4 = 36 hours, 1.5 days per subject
-    - [ ] First back up
+    - [ ] Full will take 9*5 = 45 hours, 1.8 days per subject. If no redundant calculation, it will be 9*4 = 36 hours, 1.5 days per subject
+      - [ ] First back up
+      - [ ] Minor issue, each current activity is 56gb, so 90 will be 5tb, when no downsample it will be 25tb, need to find a way to store this
   - [ ] If slurm time is unreasonable, get beta for each subject, then find a way to convert SMPLX-pose to SMPL-pose, the body pose (3:66) should be similar, only that SMPL have an extra r and l hand pose, which need to find from SMPLX-handpose
     - [ ] First, see the pkl file for smplx and smpl on the same frame, confirm 3:66 is the same
     - [ ] Also confirm :3 is the same, because, why not, just assert similar
     - [ ] Then, look for the hand pose
 - [ ] Step 3
-  - [ ] Need GPU
-  - [ ] Merge output now returning `torch.cat(): expected a non-empty list of Tensors`, it might be due to early stopping on the conversion step
+  - [x] Need GPU
+  - [x] Merge output now returning `torch.cat(): expected a non-empty list of Tensors`, it might be due to early stopping on the conversion step
+    - [x] This is caused by transl set to None, described in [issue](https://github.com/vchoutas/smplx/issues/168), applied temp fix by ignoring the transl since MB don't use it.  
   - [ ] High beta errors
 - [ ] Rotate based on camera parameters
 - [ ] Format to MotionBert format

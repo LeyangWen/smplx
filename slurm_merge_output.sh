@@ -32,6 +32,6 @@ cd transfer_model
 
 python -u merge_output.py \
 --gender male \
-/nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPL_obj_pkl/S01/Activity00_stageii/
+/nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPL_obj_pkl/S01/Activity00_stageii/ > output_slurm/merge_out.txt
 
 
