@@ -6,6 +6,8 @@ import pickle
 from scipy.spatial.transform import Rotation as R
 import wandb
 import time
+import os
+import shutil
 
 KEYS = [
 "transl",
@@ -103,8 +105,45 @@ if __name__ == '__main__':
     parser.add_argument('--gender', type=str, choices=['male', 'female', 'neutral'], help='gender of actor in motion sequence')
     parser.add_argument('--wandb-project', default='smpl-smplx', help='wandb project name')
     parser.add_argument('--wandb-name', default='test-merge', help='wandb run name')
-
+    parser.add_argument(
+        "--batch-moshpp",
+        action="store_true",
+        help="Batch process moshpp output, will use args.motion-file as a directory",
+    )
+    parser.add_argument('--SMPL-batch-store-dir', type=str, default='/nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPL_pkl/')
+    parser.add_argument("--batch-id", type=int)
     args = parser.parse_args()
     wandb.init(project=args.wandb_project, name=args.wandb_name, config=args)  # Initialize a new run
-    merge(args.output_dir, args.gender)
+    if args.batch_moshpp:
+        subject_name = f"S{args.batch_id:02d}"
+        dir_name = os.path.join(args.output_dir, subject_name)
+        male_subject_list = ['S01', 'S02', 'S04', 'S07', 'S08']
+        female_subject_list = ['S03', 'S05', 'S06', 'S09', 'S10']
+        if subject_name in male_subject_list:
+            gender = "male"
+        elif subject_name in female_subject_list:
+            ender = "female"
+        else:
+            gender = "neutral"
+        print(f"Overwriting args.gender for subject {args.batch_id} to {gender}")
+
+        for activity in os.listdir(dir_name):
+            merge_dir = os.path.join(dir_name, activity)
+            if not os.path.isdir(merge_dir):
+                continue
+            print("@"*60)
+            print(f"Processing {args.batch_id} - {activity}")
+            merge(merge_dir, gender)
+
+            activity_name = activity_name.split('_')[0]
+            output_path = os.path.join(args.SMPL_batch_store_dir, subject_name, activity_name + ".pkl")
+            # copy file
+            if not os.path.exists(os.path.dirname(output_path)):
+                os.makedirs(os.path.dirname(output_path))
+            shutil.copy(os.path.join(merge_dir, "merged.pkl"), output_path)
+            print(f"Finished processing {args.batch_id} - {activity}")
+            print(f"Copied {merge_dir}/merged.pkl to {output_path}")
+
+    else:
+        merge(args.output_dir, args.gender)
     wandb.finish()
