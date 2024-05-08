@@ -8,10 +8,10 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=50g
 #SBATCH --gres=gpu:1
-#SBATCH --time=24:00:00
+#SBATCH --time=2:00:00
 #SBATCH --account=shdpm0
 #SBATCH --partition=spgpu
-#SBATCH --array=6,9,10
+#SBATCH --array=10
 
 ##### END preamble
 
