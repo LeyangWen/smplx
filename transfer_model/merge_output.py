@@ -76,7 +76,7 @@ def merge(output_dir, gender):
         merged[k] = []
     start_time = time.time()
     for pkl_file in pkl_files:
-        wandb.log({"time": time.time() - start_time})
+        # wandb.log({"time": time.time() - start_time})
         with open(pkl_file, "rb") as f:
             data = pickle.load(f)
         for k in keys:

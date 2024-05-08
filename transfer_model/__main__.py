@@ -91,18 +91,20 @@ def main(exp_cfg) -> None:
         subject_cumulative_time = time.time() - subject_start_time
         wandb.log({'frames': exp_cfg.batch_size*ii, 'batch': ii, 'subject_cumulative_time_hr': subject_cumulative_time/3600})
 
-        for ii, path in enumerate(paths):
+        for iii, path in enumerate(paths):
             _, fname = osp.split(path)
-            output_path = osp.join(
-                output_folder, f'{osp.splitext(fname)[0]}.pkl')
-            with open(output_path, 'wb') as f:
-                pickle.dump(var_dict, f)
+            if iii == 0:
+                output_path = osp.join(
+                    output_folder, f'{osp.splitext(fname)[0]}.pkl')
+                with open(output_path, 'wb') as f:
+                    pickle.dump(var_dict, f)
 
-            #output_path = osp.join(
-            #    output_folder, f'{osp.splitext(fname)[0]}.obj')
-            #mesh = np_mesh_to_o3d(
-            #    var_dict['vertices'][ii], var_dict['faces'])
-            #o3d.io.write_triangle_mesh(output_path, mesh)
+            output_path = osp.join(
+                output_folder, f'{osp.splitext(fname)[0]}.obj')
+            mesh = np_mesh_to_o3d(
+                var_dict['vertices'][iii], var_dict['faces'])
+            o3d.io.write_triangle_mesh(output_path, mesh)
+
 
 
 if __name__ == '__main__':
