@@ -122,7 +122,7 @@ if __name__ == '__main__':
         if subject_name in male_subject_list:
             gender = "male"
         elif subject_name in female_subject_list:
-            ender = "female"
+            gender = "female"
         else:
             gender = "neutral"
         print(f"Overwriting args.gender for subject {args.batch_id} to {gender}")
@@ -135,7 +135,7 @@ if __name__ == '__main__':
             print(f"Processing {args.batch_id} - {activity}")
             merge(merge_dir, gender)
 
-            activity_name = activity_name.split('_')[0]
+            activity_name = activity.split('_')[0]
             output_path = os.path.join(args.SMPL_batch_store_dir, subject_name, activity_name + ".pkl")
             # copy file
             if not os.path.exists(os.path.dirname(output_path)):
