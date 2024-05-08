@@ -59,7 +59,7 @@ aggregate_function["betas"] = lambda x: torch.cat(x, 0).mean(0).detach().cpu().n
 for k in ["global_orient", "body_pose", "left_hand_pose", "right_hand_pose", "jaw_pose", "full_pose"]:
     aggregate_function[k] = aggregate_rotmats
 
-def merge(output_dir, gender):
+def merge(output_dir, gender, store_dir=None):
     output_dir = Path(output_dir)
     assert output_dir.exists()
     assert output_dir.is_dir()
@@ -75,8 +75,10 @@ def merge(output_dir, gender):
     for k in keys:
         merged[k] = []
     start_time = time.time()
-    for pkl_file in pkl_files:
-        # wandb.log({"time": time.time() - start_time})
+    for pkl_i, pkl_file in enumerate(pkl_files):
+        wandb.log({"time": time.time() - start_time})
+        if pkl_i % 128 != 0:  # Wen: temp fix for old bug, no need for new pkl files
+            continue
         with open(pkl_file, "rb") as f:
             data = pickle.load(f)
         for k in keys:
@@ -93,9 +95,9 @@ def merge(output_dir, gender):
 
     # add gender
     merged["gender"] = gender
-
+    store_dir = f"{output_dir}/merged.pkl" if store_dir is None else store_dir
     # save merged data to same output_dir
-    with open(output_dir / "merged.pkl", "wb") as f:
+    with open(store_dir, "wb") as f:
         pickle.dump(merged, f)
 
 if __name__ == '__main__':
@@ -128,21 +130,21 @@ if __name__ == '__main__':
         print(f"Overwriting args.gender for subject {args.batch_id} to {gender}")
 
         for activity in os.listdir(dir_name):
+            if activity[9] not in ['4']:  # wen: temp fix for old bug, no need for new pkl files
+                print(f'Skipping {activity}')
+                continue
             merge_dir = os.path.join(dir_name, activity)
             if not os.path.isdir(merge_dir):
                 continue
             print("@"*60)
             print(f"Processing {args.batch_id} - {activity}")
-            merge(merge_dir, gender)
-
-            activity_name = activity.split('_')[0]
+            activity_name = activity_name.split('_')[0]
             output_path = os.path.join(args.SMPL_batch_store_dir, subject_name, activity_name + ".pkl")
-            # copy file
             if not os.path.exists(os.path.dirname(output_path)):
                 os.makedirs(os.path.dirname(output_path))
-            shutil.copy(os.path.join(merge_dir, "merged.pkl"), output_path)
-            print(f"Finished processing {args.batch_id} - {activity}")
-            print(f"Copied {merge_dir}/merged.pkl to {output_path}")
+            merge(merge_dir, gender, store_dir=output_path)
+            print(f"Finished processing S{args.batch_id} - {activity}")
+            print(f"Stored in {output_path}")
 
     else:
         merge(args.output_dir, args.gender)
