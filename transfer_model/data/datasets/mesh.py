@@ -35,7 +35,7 @@ class MeshFolder(Dataset):
         data_folder: str,
         transforms=None,
         exts: Optional[Tuple] = None,
-        downsample=5
+        downsample=5  # wen: temp fix to downsample by 5 to speed things up
     ) -> None:
         ''' Dataset similar to ImageFolder that reads meshes with the same
             topology
@@ -54,9 +54,9 @@ class MeshFolder(Dataset):
             if any(fname.endswith(ext) for ext in exts)
         ])
         data_paths.sort()
-        # downsample_paths = data_paths[::downsample]
+        downsample_paths = data_paths[::downsample]
         # excluded_paths = np.array([path for i, path in enumerate(data_paths) if i % downsample != 0])
-        self.data_paths = data_paths
+        self.data_paths = downsample_paths
         self.num_items = len(self.data_paths)
 
     def __len__(self) -> int:

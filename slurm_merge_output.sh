@@ -11,7 +11,7 @@
 #SBATCH --time=2:00:00
 #SBATCH --account=shdpm0
 #SBATCH --partition=spgpu
-#SBATCH --array=10
+#SBATCH --array=1-10
 
 ##### END preamble
 
@@ -37,7 +37,7 @@ slurm_task_id=$SLURM_ARRAY_TASK_ID
 python -u merge_output.py \
 --batch-moshpp \
 --wandb-name "$slurm_name$slurm_task_id" \
---SMPL-batch-store-dir '/scratch/shdpm_root/shdpm0/wenleyan/20240508_temp_store/' \
+--SMPL-batch-store-dir '/scratch/shdpm_root/shdpm0/wenleyan/20240508_temp_store/SMPL_pkl/' \
 --batch-id $slurm_task_id \
 /nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPL_obj_pkl/
 
