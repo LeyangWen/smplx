@@ -130,7 +130,7 @@ if __name__ == '__main__':
         print(f"Overwriting args.gender for subject {args.batch_id} to {gender}")
 
         for activity in os.listdir(dir_name):
-            if activity[9] not in ['8']:  # wen: temp fix for old bug, no need for new pkl files
+            if activity[9] not in ['8','5','4']:  # wen: temp fix for old bug, no need for new pkl files
                 print(f'Skipping {activity}')
                 continue
             merge_dir = os.path.join(dir_name, activity)
