@@ -76,7 +76,7 @@ def merge(output_dir, gender):
         merged[k] = []
     start_time = time.time()
     for pkl_file in pkl_files:
-        wandb.log({"time": time.time() - start_time})
+        # wandb.log({"time": time.time() - start_time})
         with open(pkl_file, "rb") as f:
             data = pickle.load(f)
         for k in keys:
@@ -122,7 +122,7 @@ if __name__ == '__main__':
         if subject_name in male_subject_list:
             gender = "male"
         elif subject_name in female_subject_list:
-            ender = "female"
+            gender = "female"
         else:
             gender = "neutral"
         print(f"Overwriting args.gender for subject {args.batch_id} to {gender}")
