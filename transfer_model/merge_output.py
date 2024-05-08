@@ -138,7 +138,7 @@ if __name__ == '__main__':
                 continue
             print("@"*60)
             print(f"Processing {args.batch_id} - {activity}")
-            activity_name = activity_name.split('_')[0]
+            activity_name = activity.split('_')[0]
             output_path = os.path.join(args.SMPL_batch_store_dir, subject_name, activity_name + ".pkl")
             if not os.path.exists(os.path.dirname(output_path)):
                 os.makedirs(os.path.dirname(output_path))
