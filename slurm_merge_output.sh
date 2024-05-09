@@ -10,7 +10,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --time=2:00:00
 #SBATCH --account=shdpm0
-#SBATCH --partition=spgpu
+#SBATCH --partition=spgpu,gpu_mig40,gpu
 #SBATCH --array=1-10
 
 ##### END preamble
