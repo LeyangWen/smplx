@@ -19,7 +19,7 @@ optim:
 
 body_model:
     model_type: "smpl"
-    gender: "female"
+    gender: "neutral"
     ext: 'pkl'
     folder: "models"
     use_compressed: False

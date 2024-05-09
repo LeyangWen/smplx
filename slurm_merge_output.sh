@@ -39,7 +39,7 @@ python -u merge_output.py \
 --wandb-name "$slurm_name$slurm_task_id" \
 --SMPL-batch-store-dir '/scratch/shdpm_root/shdpm0/wenleyan/20240508_temp_store/SMPL_pkl/' \
 --batch-id $slurm_task_id \
-/nfs/turbo/coe-shdpm/leyang/VEHS-7M/Mesh/SMPL_obj_pkl/
+/scratch/shdpm_root/shdpm0/wenleyan/20240508_temp_store/SMPL_obj_pkl/
 
 #python -u merge_output.py \
 #--batch-moshpp \

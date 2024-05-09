@@ -40,7 +40,7 @@ KEYS = ['transl',
 
 
 IGNORED_KEYS = [
-'transl',  # bug in transfer model set this to none, temporary fix
+# 'transl',  # bug in transfer model set this to none, temporary fix
 "vertices",
 "faces",
 "v_shaped"
@@ -77,8 +77,8 @@ def merge(output_dir, gender, store_dir=None):
     start_time = time.time()
     for pkl_i, pkl_file in enumerate(pkl_files):
         wandb.log({"time": time.time() - start_time})
-        if pkl_i % 128 != 0:  # Wen: temp fix for old bug, no need for new pkl files
-            continue
+        # if pkl_i % 128 != 0:  # Wen: temp fix for old bug, no need for new pkl files
+        #     continue
         with open(pkl_file, "rb") as f:
             data = pickle.load(f)
         for k in keys:
@@ -139,7 +139,9 @@ if __name__ == '__main__':
             output_path = os.path.join(args.SMPL_batch_store_dir, subject_name, activity_name + ".pkl")
             if not os.path.exists(os.path.dirname(output_path)):
                 os.makedirs(os.path.dirname(output_path))
+
             merge(merge_dir, gender, store_dir=output_path)
+
             print(f"Finished processing S{args.batch_id} - {activity}")
             print(f"Stored in {output_path}")
 

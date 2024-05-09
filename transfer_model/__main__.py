@@ -128,12 +128,16 @@ if __name__ == '__main__':
 
             exp_cfg.datasets.mesh_folder.data_folder = root
             exp_cfg.output_folder = os.path.join(args.overwrite_output_folder, subject_name, activity_name)
-            if subject_name in male_subject_list:
-                exp_cfg.body_model.gender = "male"
-            elif subject_name in female_subject_list:
-                exp_cfg.body_model.gender = "female"
-            else:
-                exp_cfg.body_model.gender = "neutral"
+
+            # if subject_name in male_subject_list:
+            #     exp_cfg.body_model.gender = "male"
+            # elif subject_name in female_subject_list:
+            #     exp_cfg.body_model.gender = "female"
+            # else:
+            #     exp_cfg.body_model.gender = "neutral"
+            exp_cfg.body_model.gender = "neutral"  # overwrite to neutral
+            print("#"*20, f"Warning: overwriting gender to neutral for MotionBert", "#"*20)
+
             print(f"Subject: {subject_name} is {exp_cfg.body_model.gender}")
             print(f"Output folder: {exp_cfg.output_folder}")
             main(exp_cfg)
