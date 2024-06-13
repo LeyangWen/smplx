@@ -1,10 +1,11 @@
+import os.path
 import os.path as osp
 import argparse
 
 import numpy as np
 import torch
 
-import pyrender
+
 import trimesh
 
 import smplx
@@ -13,7 +14,7 @@ from smplx.joint_names import Body
 from tqdm.auto import tqdm, trange
 
 from pathlib import Path
-
+# import wandb
 
 def main(
     model_folder,
@@ -27,17 +28,31 @@ def main(
     sample_expression=True,
     num_expression_coeffs=10,
     use_face_contour=False,
+    verbose=True
 ):
     output_folder = Path(output_folder)
     assert output_folder.exists()
 
     # open motion file
-    motion = np.load(motion_file, allow_pickle=True)
-    for k, v in motion.items():
-        if type(v) is float:
-            print(k, v)
-        else:
-            print(k, v.shape)
+    if motion_file.endswith(".npz"):
+        motion = np.load(motion_file, allow_pickle=True)
+    elif motion_file.endswith(".pkl"):  # output from moshpp
+        motion = np.load(motion_file, allow_pickle=True)
+        motion['poses'] = motion['fullpose']
+        motion['marker_labels'] = np.array(motion['latent_labels'])
+    else:
+        raise ValueError("Unsupported file type")
+
+    if verbose:
+        for k, v in motion.items():
+            if type(v) is float:
+                print(k, v)
+            elif type(v) is dict:
+                print(k, type(v))
+            elif type(v) is list:
+                print(k, len(v))
+            else:
+                print(k, v.shape)
 
     if "betas" in motion:
         betas = motion["betas"]
@@ -71,6 +86,7 @@ def main(
     betas = betas.unsqueeze(0)[:, : model.num_betas]
     if "poses" in motion:
         poses = torch.tensor(motion["poses"]).float()
+        n = poses.shape[0]
     elif "smpl_poses" in motion:
         poses = motion["smpl_poses"]
         n = poses.shape[0]
@@ -84,6 +100,13 @@ def main(
         body_pose = poses[:, 3:66]
         left_hand_pose = poses[:, 66:111]
         right_hand_pose = poses[:, 111:156]
+    elif model_type == "smplx":
+        body_pose = poses[:, 3:66]
+        jaw_pose = poses[:, 66:69]
+        leye_pose = poses[:, 69:72]
+        reye_pose = poses[:, 72:75]
+        left_hand_pose = poses[:, 75:120]
+        right_hand_pose = poses[:, 120:]
     else:
         body_pose = poses[:, 3:]
         left_hand_pose = np.zeros((n, 3))
@@ -107,8 +130,8 @@ def main(
             # expression=expression,
             return_verts=True,
         )
-        vertices = output.vertices_frame.detach().cpu().numpy().squeeze()
-        joints = output.joints_frame.detach().cpu().numpy().squeeze()
+        vertices = output.vertices.detach().cpu().numpy().squeeze()
+        joints = output.joints.detach().cpu().numpy().squeeze()
 
         vertex_colors = np.ones([vertices.shape[0], 4]) * [0.3, 0.3, 0.3, 0.8]
         # process=False to avoid creating a new mesh
@@ -116,10 +139,11 @@ def main(
             vertices, model.faces, vertex_colors=vertex_colors, process=False
         )
 
-        output_path = output_folder / "{0:04d}.obj".format(pose_idx[0])
+        output_path = output_folder / "{0:07d}.obj".format(pose_idx[0])
         tri_mesh.export(str(output_path))
 
-        if pose_idx[0] == 0:
+        if pose_idx[0] == 0 and verbose:
+            import pyrender
             print("displaying first pose, exit window to continue processing")
             mesh = pyrender.Mesh.from_trimesh(tri_mesh)
 
@@ -182,6 +206,15 @@ if __name__ == "__main__":
         type=lambda arg: arg.lower() in ["true", "1"],
         help="Compute the contour of the face",
     )
+    parser.add_argument(
+        "--batch-moshpp",
+        action="store_true",
+        help="Batch process moshpp output, will use args.motion-file as a directory",
+    )
+    parser.add_argument(
+        "--batch-id",
+        type=int,
+    )
 
     args = parser.parse_args()
 
@@ -190,18 +223,64 @@ if __name__ == "__main__":
 
     model_folder = resolve(args.model_folder)
     motion_file = resolve(args.motion_file)
-    output_folder = resolve(args.output_folder)
+    args.output_folder = resolve(args.output_folder)
     model_type = args.model_type
     ext = args.ext
     num_expression_coeffs = args.num_expression_coeffs
     sample_expression = args.sample_expression
 
-    main(
-        model_folder,
-        motion_file,
-        output_folder,
-        model_type,
-        ext=ext,
-        sample_expression=sample_expression,
-        use_face_contour=args.use_face_contour,
-    )
+    if args.batch_moshpp:
+        for root, dirs, files in os.walk(motion_file):
+            files.sort(key=str.lower)  # Sort files in-place
+            for file in files:
+                if file.endswith('.pkl') and 'stageii' in file:
+                    if args.batch_id is not None and args.batch_id != int(root[-2:]):  # "S01"  --> "01" --> 1
+                        continue
+                    # ignore_list = ["00", "01"]
+                    # ignore_countinue = False
+                    # for ignore_term in ignore_list:
+                    #     if ignore_term in root:
+                    #         ignore_countinue = True
+                    # if ignore_countinue:
+                    #     continue
+
+                    # Determine gender from mosh output
+                    female_dir = os.path.join(root, "female_stagei.json")
+                    male_dir = os.path.join(root, "male_stagei.json")
+                    if os.path.exists(female_dir):
+                        gender = "female"
+                    elif os.path.exists(male_dir):
+                        gender = "male"
+                    else:
+                        print("*"*20, "Warning: No gender files detected", "*"*20)
+                        gender = "neutral"
+                    print(f"Setting gender to: {gender}")
+
+                    input_file = os.path.join(root, file)
+                    output_folder = os.path.join(args.output_folder, root.split('/')[-1], file.split('.')[0])
+                    print(f"Processing {input_file}...")
+                    print(f"Output folder: {output_folder}")
+                    if not os.path.exists(output_folder):
+                        os.makedirs(output_folder)
+
+                    main(
+                        model_folder,
+                        input_file,
+                        output_folder,
+                        model_type,
+                        ext=ext,
+                        gender=gender,
+                        sample_expression=sample_expression,
+                        use_face_contour=args.use_face_contour,
+                        verbose=False
+                    )
+    else:
+        main(
+            model_folder,
+            motion_file,
+            output_folder,
+            model_type,
+            ext=ext,
+            sample_expression=sample_expression,
+            use_face_contour=args.use_face_contour,
+        )

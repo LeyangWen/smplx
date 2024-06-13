@@ -108,3 +108,4 @@ venv.bak/
 .mypy_cache/
 
 /3DSSPP_v7_cli/
+/models/smpl/SMPL_NEUTRAL.pkl

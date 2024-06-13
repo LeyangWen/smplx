@@ -106,6 +106,91 @@ Problems are also discussed in
 [two](https://github.com/vchoutas/smplx/issues/82)
 [issues](https://github.com/vchoutas/smplx/issues/75).
 
+
+## My debug note:
+- [x] Env setup, I just build upon the soma env
+- [x] Step 1, working locally
+  - [x] Added wandb, and parrallel codes
+  - [x] Working on slurm, GPU is way faster than CPU only, est 5 hours each for 10 subjects
+- [x] Step 2, working locally
+  - [x] `vertices_frame` need to convert to `vertices` in multiple places, it was updated in the upstream SMPLX repo but not here for some reason. I have fixed those that are throwing errors but not all. 
+  - [x] Need gpu? - step 2 conversion need
+- [x] Speed issue, the conversion now takes 4 years on my gpu, try slurm and get time estimate
+  - [x] If slurm time is reasonable, maybe consider downsampling
+    - [x] Update: got response from [issue](https://github.com/vchoutas/smplx/issues/190), added parameter in config file to dramatically speed up, now takes 115h for one activity, so for 90, it will take 10,350h, which is 431 days. If I downsample by 5, and run on 10 instances, it will take 8.6 days
+      - [x] Testing blender visualization, exactly the same with SMPLX and SMPL-slow
+      - [x] Testing beta similarity, still okayish
+      - [x] Moving forward with the new parameter
+      - [x] Also increasing batch size to 128 dramatically speed up the process 
+    - [x] Tested Slurm speed, downsample 5 --> 9 hours each for 10 subjects, can run parrell, pretty fast
+    - [ ] Full will take 9*5 = 45 hours, 1.8 days per subject. If no redundant calculation, it will be 9*4 = 36 hours, 1.5 days per subject
+      - [ ] First back up
+      - [ ] Minor issue, each current activity is 56gb, so 90 will be 5tb, when no downsample it will be 25tb, need to find a way to store this
+  - [ ] If slurm time is unreasonable, get beta for each subject, then find a way to convert SMPLX-pose to SMPL-pose, the body pose (3:66) should be similar, only that SMPL have an extra r and l hand pose, which need to find from SMPLX-handpose
+    - [ ] First, see the pkl file for smplx and smpl on the same frame, confirm 3:66 is the same
+    - [ ] Also confirm :3 is the same, because, why not, just assert similar
+    - [ ] Then, look for the hand pose
+- [ ] Step 3
+  - [x] Need GPU
+  - [x] Merge output now returning `torch.cat(): expected a non-empty list of Tensors`, it might be due to early stopping on the conversion step
+    - [x] This is caused by transl set to None, described in [issue](https://github.com/vchoutas/smplx/issues/168), applied temp fix by ignoring the transl since MB don't use it.  
+  - [ ] High beta errors
+- [ ] Rotate based on camera parameters
+- [ ] Format to MotionBert format
+
+
+
+#### beta similarity
+```
+slow/original:
+ -0.835 +/- 0.036
+ 1.530 +/- 0.068
+ 2.037 +/- 0.222
+ 0.884 +/- 0.150
+ 0.802 +/- 0.312
+ -0.781 +/- 0.295
+ 0.132 +/- 0.138
+ -0.107 +/- 0.264
+ -0.948 +/- 0.478
+ 1.678 +/- 0.297
+```
+```
+fast/added issue parameter:
+-0.834 +/- 0.040
+1.532 +/- 0.074
+2.042 +/- 0.241
+0.874 +/- 0.157
+0.835 +/- 0.330
+-0.749 +/- 0.319
+0.143 +/- 0.155
+-0.097 +/- 0.314
+-0.910 +/- 0.490
+1.661 +/- 0.297
+```
+- running on local GPU, 
+  - batch_size = 1, num_workers=0 --> 20/3381 [06:42<18:48:27, 20.15s/it]
+  - batch_size = 8, num_workers=0 --> 5/423 [09:03<12:20:24, 106.28s/it]
+  - batch_size = 8, num_workers=16 --> 10/423 [16:52<10:57:32, 95.53s/it]
+  - batch_size = 32, num_workers=16, downsample 5 --> 5/22 [23:10<1:18:47, 278.10s/it]
+    - 23/60/795*22000*9/24 --> 3.97 days per subject
+- running on slurm
+  - batch_size = 32, num_workers=16, downsample 5 --> 7/31 [17:56<1:00:14, 150.59s/it]59<00:07,  8.64it/s]
+    - 1/4475*22000*9/24 --> 1.8 days per subject
+### Full workflow
+
+```bash
+cd transfer_model
+python write_obj.py --model-folder ../models/ --motion-file ../transfer_data/support_data/S05/Activity04_stageii.pkl --output-folder ../transfer_data/meshes/VEHS_test/ --model-type smplx --batch-moshpp
+
+cd ..
+python -m transfer_model  --exp-cfg config_files/smplx2smpl.yaml
+
+cd transfer_model
+python merge_output.py --gender neutral ../transfer_data/output/VEHS_test/
+```
+
+
+
 ### SMPL to SMPL-X
 
 To run the code to convert SMPL meshes to SMPL-X parameters use the following command:
@@ -122,7 +207,7 @@ with SMPL meshes, in either ply or obj format, change the path in the config fil
 
 To run the code to convert SMPL-X meshes to SMPL parameters use the following command:
   ```Shell
-  python main.py --exp-cfg config_files/smplx2smpl.yaml
+  python -m transfer_model  --exp-cfg config_files/smplx2smpl.yaml
   ```
 
 The file *smplx2smpl.yaml* contains a sample configuration that reads meshes from a folder,
