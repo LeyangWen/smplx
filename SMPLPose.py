@@ -1,6 +1,5 @@
 from smplx.body_models import SMPL, SMPLH, SMPLX, MANO, FLAME
 import numpy as np
-import matplotlib.pyplot as plt
 import torch
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -13,6 +12,9 @@ import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 import trimesh
 from ergo3d import *
+import pickle
+import argparse
+import ergo3d as eg
 
 class SMPLPose:
     def __init__(self):
@@ -125,12 +127,12 @@ class SMPLPose:
             # Create visualizer
             vis = o3d.visualization.O3DVisualizer("Open3D", 1024, 768)
 
-            for i, vertex in enumerate(trimesh_vertices):
-                if vertex[1] < trimesh_vertices[4927][1]:  # > front side
-                    continue
-                vis.add_3d_label(vertex, str(i))
-            for i, vertex in enumerate(joints_frame):
-                vis.add_3d_label(vertex, str(i))
+            # for i, vertex in enumerate(trimesh_vertices):
+            #     if vertex[1] < trimesh_vertices[4927][1]:  # > front side
+            #         continue
+            #     vis.add_3d_label(vertex, str(i))
+            # for i, vertex in enumerate(joints_frame):
+            #     vis.add_3d_label(vertex, str(i))
             # Add the mesh and point cloud to the visualizer
             #
             vis.add_geometry("points", point_cloud)
@@ -147,7 +149,7 @@ class SMPLPose:
         for i in range(self.frame_number):
             print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
-            self.plot_vertices_frame(frame=i, filename=filename)
+            self.plot_vertices_frame(frame=i, filename=filename, render_mode='matplotlib')
 
         if foldername and make_gif:
             images = []
@@ -311,18 +313,18 @@ class SMPLPose:
         return frame_i+1  # +1 so that the next concatenate will start from the next frame
 
 
-
 if __name__ == '__main__':
-    case = 0
+    case = 1
     if case == 0:  # get all 50 results in one txt for all text prompt
         motion_smpl_folder_base = r'experiment\text2pose\text2pose'
         text_prompts = ['A_standing_person_squat_down_to_work_on_something_near_the_floor',
                         'A_person_raise_both_hands_above_his_head_and_keep_them_there',
                         'A_person_squat_to_carry_up_something',
-                        'A_person_move_a_box_from_left_to_right']
-        text_prompt = text_prompts[0]
+                        'A_person_move_a_box_from_left_to_right',
+                        'A_person_picks_up_a_heavy_cinder_block_from_the_ground_to_waist_level']
+        text_prompt = text_prompts[-1]
         small_sample = 1000  # only process the first 2 files, todo: remove when actually running
-        select_motion_list = ['25', '15', '14', '13', '11', '12', '72']
+        # select_motion_list = ['25', '15', '14', '13', '11', '12', '72']
 
 
         motion_smpl_folder = f'{motion_smpl_folder_base}\\{text_prompt}'
@@ -365,5 +367,58 @@ if __name__ == '__main__':
             last_frame_i = smpl_pose.export_3DSSPP_batch(loc_file=loc_file, concatenate=last_frame_i, task_name=motion_smpl_file)
             # smpl_pose.plot_vertices_frame(frame=0, plot_joints=True, render_mode='open3d')
             smpl_pose.plot_vertices(foldername=f'{motion_smpl_folder}\\Baseline_smpl_pose_72_{real_index}', make_gif=True, fps=30)
-    # elif case == 2:  # get one individual result
+    elif case == 1:  # render smplx results from mosh
+        parser = argparse.ArgumentParser()
+        args = parser.parse_args()
+        args.frame = 10
+        args.input_file = r'W:/VEHS/VEHS-7M/SMPL/S01/Activity00_stageii.pkl'
+        args.downsample = 20
+
+        with open(args.input_file, "rb") as f:
+            data = pickle.load(f)
+
+
+        # downsample by 100
+        pose = data['fullpose'][::args.downsample]
+        trans = data['trans'][::args.downsample]
+        betas = data['betas'][::args.downsample]
+        frame_no = pose.shape[0]
+
+        global_orient = pose[:, :3]
+        body_pose = pose[:, 3:66]
+        jaw_pose = pose[:, 66:69]
+        leye_pose = pose[:, 69:72]
+        reye_pose = pose[:, 72:75]
+        left_hand_pose = pose[:, 75:120]
+        right_hand_pose = pose[:, 120:]
+
+        # global_orient = eg.Camera.rotate_axis_angle_by_axis_angle(global_orient, np.array([-np.pi / 2, 0, 0]))
+        # global_orient = eg.Camera.rotate_axis_angle_by_axis_angle(global_orient, camera_orientation_axis_angle)
+        # global_orient = eg.Camera.rotate_axis_angle_by_axis_angle(camera_orientation_axis_angle, global_orient)
+
+        global_orient = torch.tensor(global_orient, dtype=torch.float32)
+        body_pose = torch.tensor(body_pose, dtype=torch.float32)
+        betas = torch.tensor(betas, dtype=torch.float32)
+        jaw_pose = torch.tensor(jaw_pose, dtype=torch.float32)
+        leye_pose = torch.tensor(leye_pose, dtype=torch.float32)
+        reye_pose = torch.tensor(reye_pose, dtype=torch.float32)
+        left_hand_pose = torch.tensor(left_hand_pose, dtype=torch.float32)
+        right_hand_pose = torch.tensor(right_hand_pose, dtype=torch.float32)
+
+
+        smplx_object = SMPLX(model_path=r'models/smplx\SMPLX_MALE.npz', batch_size=frame_no)
+        smplx_output = smplx_object.forward(beta=betas, body_pose=body_pose, global_orient=global_orient, jaw_pose=jaw_pose,
+                                            leye_pose=leye_pose, reye_pose=reye_pose)  #, left_hand_pose=left_hand_pose, right_hand_pose=right_hand_pose)
+        joints = smplx_output.joints.detach().numpy()
+        vertices = smplx_output.vertices.detach().numpy()
+        faces = smplx_object.faces
+
+        smpl_pose = SMPLPose()
+        smpl_pose.load_smpl(joints, vertices, faces)
+        smpl_pose.downsample()
+
+        smpl_pose.plot_vertices_frame(frame=args.frame, plot_joints=True, render_mode='open3d')
+        # smpl_pose.plot_vertices_frame(frame=args.frame, plot_joints=True, render_mode='matplotlib', render_coordinate=True)
+
+        smpl_pose.plot_vertices(foldername=r'C:\Users\wenleyan1\Downloads\temp_smpl', make_gif=True, fps=5)
 
