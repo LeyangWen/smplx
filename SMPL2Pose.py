@@ -2,38 +2,58 @@ from smplx.body_models import SMPL, SMPLH, SMPLX, MANO, FLAME
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
+import pickle
+import matplotlib
+matplotlib.use('Qt5Agg')
 
-motion_smpl_file = r'G:\My Drive\DPM\temp\smpl_pose_72_8.npy'
-# motion_smpl_file = r'G:\My Drive\DPM\temp\motion_0.npy'
-with open(motion_smpl_file, 'rb') as f:
-    motion_smpl = np.load(f, allow_pickle=True)[None][0]
-    global_orient = motion_smpl[:, :3]
-    body_pose = motion_smpl[:, 3:]
-    # motion_smpl = motion_smpl.reshape(-1, 24, 3)
-frame_no = body_pose.shape[0]
-smpl_object = SMPL(model_path=r'models\smpl\SMPL_NEUTRAL.pkl', batch_size=frame_no)
-# theta = np.zeros(72)
-# theta[-3:] = 0.5
-# convert to a tensor
-theta = torch.tensor(body_pose, dtype=torch.float32)
-global_orient = torch.tensor(global_orient, dtype=torch.float32)
-smpl_output = smpl_object.forward(beta=np.zeros(10), body_pose=theta, global_orient=global_orient)
-joints = smpl_output.joints.detach().numpy()
-vertices = smpl_output.vertices.detach().numpy()
-joints = joints[:, :, [0, 2, 1]]
-joints[:, :, 1] = -joints[:, :, 1]
-vertices = vertices[:, :, [0, 2, 1]]
-vertices[:, :, 1] = -vertices[:, :, 1]
+# ## T2M-GPT
+# file_type = 'smpl_npy'
+# motion_smpl_file = r'G:\My Drive\DPM\temp\smpl_pose_72_8.npy'
+# # motion_smpl_file = r'G:\My Drive\DPM\temp\motion_0.npy'
+
+## MB results
+file_type = 'MB_out_pkl'
+motion_smpl_file = r'/Users/leyangwen/Documents/mesh/H36M Results_small.pkl'
+
+if file_type == 'smpl_npy':
+    with open(motion_smpl_file, 'rb') as f:
+        motion_smpl = np.load(f, allow_pickle=True)[None][0]
+        global_orient = motion_smpl[:, :3]
+        body_pose = motion_smpl[:, 3:]
+        # motion_smpl = motion_smpl.reshape(-1, 24, 3)
+elif file_type == 'MB_out_pkl':
+    with open(motion_smpl_file, 'rb') as f:
+        data = pickle.load(f)
+    vertices = data['verts'].reshape(-1, 6890, 3)
+    joints = data['kp_3d'].reshape(-1, 17, 3)
+    # global_orient = data['global_orient']
+    # body_pose = data['body_pose']
+
+
+# frame_no = body_pose.shape[0]
+# smpl_object = SMPL(model_path=r'models\smpl\SMPL_NEUTRAL.pkl', batch_size=frame_no)
+# # theta = np.zeros(72)
+# # theta[-3:] = 0.5
+# # convert to a tensor
+# theta = torch.tensor(body_pose, dtype=torch.float32)
+# global_orient = torch.tensor(global_orient, dtype=torch.float32)
+# smpl_output = smpl_object.forward(beta=np.zeros(10), body_pose=theta, global_orient=global_orient)
+# joints = smpl_output.joints.detach().numpy()
+# vertices = smpl_output.vertices.detach().numpy()
+# joints = joints[:, :, [0, 2, 1]]
+# joints[:, :, 1] = -joints[:, :, 1]
+# vertices = vertices[:, :, [0, 2, 1]]
+# vertices[:, :, 1] = -vertices[:, :, 1]
 
 
 
 if True:
     # plot vertices
-    view_frame =   0
+    view_frame = 500
     joints_frame = joints[view_frame]
     vertices_frame = vertices[view_frame]
 
-    hand_center_z = joints_frame[22, 2]
+    # hand_center_z = joints_frame[22, 2]
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     for i, v in enumerate(vertices_frame):
