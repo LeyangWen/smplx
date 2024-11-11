@@ -9,6 +9,9 @@ from human_body_prior.tools.omni_tools import get_support_data_dir
 # copy and replace moshpp/src/moshpp/marker_layout/marker_vids.py
 # custom marker vids for VEHS-7M markers
 
+
+# run in soma project
+
 def smplx2smplh(vids: Union[list, str]) -> Union[list, str]:
     support_dir = get_support_data_dir(__file__)
 
